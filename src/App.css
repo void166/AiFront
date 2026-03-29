@@ -1,0 +1,2 @@
+/* App-level overrides — minimal, most styles are in module.css files */
+* { box-sizing: border-box; }
