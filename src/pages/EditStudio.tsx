@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { VideoData, SceneData, SceneTransitionPreset, SubtitleStyleOptions } from '@integration/types';
-import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGenSceneNarration } from '@integration/videoApi';
+import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGenSceneNarration, getVideoStatus } from '@integration/videoApi';
 import { useAuth } from '../context/AuthContext';
 import styles from './EditStudio.module.css';
 
@@ -46,8 +46,12 @@ export function EditStudio() {
   const location    = useLocation();
   const { token }   = useAuth();
 
-  // Get video data from router state (passed via navigate)
+  // Get video data from router state (passed via navigate) OR fetch from API
   const stateVideo = (location.state as { video?: VideoData } | null)?.video;
+
+  const [videoData,    setVideoData]    = useState<VideoData | null>(stateVideo ?? null);
+  const [fetchLoading, setFetchLoading] = useState(!stateVideo);
+  const [fetchError,   setFetchError]   = useState<string | null>(null);
 
   const [scenes, setScenes]           = useState<SceneData[]>(stateVideo?.scenes ?? []);
   const [transitions, setTransitions] = useState<SceneTransitionPreset[]>(
@@ -58,6 +62,29 @@ export function EditStudio() {
   const [rendering, setRendering]     = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderedUrl, setRenderedUrl] = useState<string | null>(null);
+
+  // Fetch from API when navigated without router state (e.g. from VideoLibrary)
+  useEffect(() => {
+    // Already have data (from router state or previous fetch) — nothing to do
+    if (stateVideo || videoData || !videoId || !token) {
+      setFetchLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setFetchLoading(true);
+    getVideoStatus(videoId, token)
+      .then(data => {
+        if (cancelled) return;
+        setVideoData(data);
+        setScenes(data.scenes ?? []);
+        setTransitions((data.scenes ?? []).map(() => 'auto' as SceneTransitionPreset));
+        setBgmPath((data as any).options?.bgmPath ?? '');
+      })
+      .catch(e => { if (!cancelled) setFetchError(e.message ?? 'Failed to load video'); })
+      .finally(() => { if (!cancelled) setFetchLoading(false); });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId, token]); // intentionally omit videoData/stateVideo — only run once on mount
 
   // Per-scene regen states
   const [regenImg, setRegenImg]     = useState<number | null>(null);
@@ -122,13 +149,13 @@ export function EditStudio() {
       const s = scenes[idx];
       const result = await regenSceneText(
         videoId!,
-        { what: 'narration', scene: s.scene, time: s.time, narration: s.narration, imagePrompt: s.imagePrompt, genre: stateVideo?.options?.genre },
+        { what: 'narration', scene: s.scene, time: s.time, narration: s.narration, imagePrompt: s.imagePrompt, genre: videoData?.options?.genre },
         token ?? undefined,
       );
       if (result.narration) updateScene(idx, { narration: result.narration });
     } catch (e: any) { alert(`Narration regen failed: ${e.message}`); }
     finally { setRegenText(null); }
-  }, [scenes, videoId, stateVideo, token]);
+  }, [scenes, videoId, videoData, token]);
 
   // ── ImagePrompt AI regen ───────────────────────────────────────────────────
   const handleRegenImagePrompt = useCallback(async (idx: number) => {
@@ -137,13 +164,13 @@ export function EditStudio() {
       const s = scenes[idx];
       const result = await regenSceneText(
         videoId!,
-        { what: 'imagePrompt', scene: s.scene, time: s.time, narration: s.narration, imagePrompt: s.imagePrompt, genre: stateVideo?.options?.genre },
+        { what: 'imagePrompt', scene: s.scene, time: s.time, narration: s.narration, imagePrompt: s.imagePrompt, genre: videoData?.options?.genre },
         token ?? undefined,
       );
       if (result.imagePrompt) updateScene(idx, { imagePrompt: result.imagePrompt });
     } catch (e: any) { alert(`Image prompt regen failed: ${e.message}`); }
     finally { setRegenText(null); }
-  }, [scenes, videoId, stateVideo, token]);
+  }, [scenes, videoId, videoData, token]);
 
   // ── Re-render ──────────────────────────────────────────────────────────────
   const handleRerender = useCallback(async () => {
@@ -155,11 +182,11 @@ export function EditStudio() {
         videoId!,
         {
           scenes,
-          title:            stateVideo?.title,
+          title:            videoData?.title,
           sceneTransitions: transitions,
           subtitleStyle:    preset?.disabled ? undefined : preset?.style,
           disableSubtitles: preset?.disabled ?? false,
-          genre:            stateVideo?.options?.genre,
+          genre:            videoData?.options?.genre,
           bgmPath:          bgmPath || undefined,
         },
         token ?? undefined,
@@ -170,12 +197,23 @@ export function EditStudio() {
     } finally {
       setRendering(false);
     }
-  }, [videoId, scenes, transitions, subPreset, bgmPath, stateVideo]);
+  }, [videoId, scenes, transitions, subPreset, bgmPath, videoData]);
 
-  if (!stateVideo) {
+  // Loading state while fetching from API
+  if (fetchLoading) {
     return (
       <div className={styles.noData}>
-        <p>No video data found. Please generate a video first.</p>
+        <span className={styles.loadingSpinner} />
+        <p>Loading video…</p>
+      </div>
+    );
+  }
+
+  // Error or truly missing
+  if (fetchError || !videoData) {
+    return (
+      <div className={styles.noData}>
+        <p>{fetchError ?? 'Video not found.'}</p>
         <button className={styles.backBtn} onClick={() => navigate('/')}>← Back to Studio</button>
       </div>
     );
@@ -190,7 +228,7 @@ export function EditStudio() {
           <span className={styles.titleIcon}>✏️</span>
           <div>
             <h1 className={styles.title}>Edit Studio</h1>
-            <p className={styles.subtitle}>{stateVideo.topic}</p>
+            <p className={styles.subtitle}>{videoData.topic}</p>
           </div>
         </div>
         <button

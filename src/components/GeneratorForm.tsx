@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GenerateVideoPayload, TransitionStyle, SubtitleStyleOptions, TtsProvider } from '@integration/types';
+import type { GenerateVideoPayload, TransitionStyle, SubtitleStyleOptions, TtsProvider, ScriptProvider } from '@integration/types';
 import styles from './GeneratorForm.module.css';
 
 // ─── Subtitle presets ─────────────────────────────────────────────────────────
@@ -63,6 +63,7 @@ const ELEVENLABS_VOICES: Record<string, { id: string; label: string }[]> = {
     { id: 'tZssYepgGaQmegsMEXjK', label: '👻 Voice 1 — Dark & Haunting' },
     { id: 'L55dxfJcuGgA6v2SWaAQ', label: '👻 Voice 2 — Whispery Dread' },
     { id: 'vflhOcwDlonnVFj3wJqz', label: '👻 Voice 3 — Deep & Eerie' },
+    {id: 'tZssYepgGaQmegsMEXjK', label:  '👻 voice 4 - crime horror narrator'},
   ],
   education: [
     { id: 'T4x5CtnhOiichhcqFzgg', label: '📚 Voice 1 — Clear & Engaging' },
@@ -150,6 +151,12 @@ const IMAGE_STYLES = [
   { id: 'simpsons',      label: 'Simpsons' },
 ];
 
+// ─── Script providers ─────────────────────────────────────────────────────────
+const SCRIPT_PROVIDERS: { id: ScriptProvider; label: string; desc: string }[] = [
+  { id: 'anthropic', label: '🧠 Claude',  desc: 'Anthropic — creative & detailed' },
+  { id: 'groq',      label: '⚡ Groq',    desc: 'Llama 3.3 — fast generation' },
+];
+
 const TRANSITIONS: { id: TransitionStyle; label: string; desc: string }[] = [
   { id: 'mixed', label: '🎲 Mixed',  desc: 'All types' },
   { id: 'fade',  label: '🌅 Fade',   desc: 'Smooth fades' },
@@ -168,6 +175,8 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
   const [subtitlePreset, setSubtitlePreset]   = useState<string>('classic');
   const [ttsProvider, setTtsProvider]         = useState<TtsProvider>('gemini');
   const [voiceId, setVoiceId]                 = useState<string>('Kore');
+  const [scriptProvider, setScriptProvider]   = useState<ScriptProvider>('anthropic');
+  const [showAdvanced, setShowAdvanced]       = useState(false);
 
   // Voice options depend on provider
   const voiceOptions =
@@ -199,7 +208,8 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
       duration,
       transitionStyle,
       ttsProvider,
-      voiceId: voiceId || undefined,
+      voiceId:        voiceId || undefined,
+      scriptProvider,
       subtitleStyle:    preset?.disabled ? undefined : preset?.style,
       disableSubtitles: preset?.disabled ?? false,
     });
@@ -208,7 +218,7 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
 
-      {/* Topic */}
+      {/* ── Topic ── */}
       <div className={styles.field}>
         <label className={styles.label}>
           <span className={styles.labelDot} />
@@ -217,117 +227,59 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
         <div className={styles.inputWrap}>
           <textarea
             className={styles.textarea}
-            placeholder="Enter a topic, title, or idea for your video…"
+            placeholder="e.g. The mystery of the Bermuda Triangle…"
             value={topic}
             onChange={e => setTopic(e.target.value)}
-            rows={3}
+            rows={2}
             disabled={isLoading}
           />
           <div className={styles.inputGlow} />
         </div>
       </div>
 
-      {/* Genre grid */}
+      {/* ── Genre 5-col compact grid ── */}
       <div className={styles.field}>
         <label className={styles.label}>
           <span className={styles.labelDot} />
           Genre
         </label>
-        <div className={styles.genreGrid}>
+        <div className={styles.genreGrid5}>
           {GENRES.map(g => (
             <button
               key={g.id}
               type="button"
-              className={`${styles.genreCard} ${genre === g.id ? styles.genreActive : ''}`}
+              className={`${styles.genreChip} ${genre === g.id ? styles.genreChipActive : ''}`}
               onClick={() => handleGenreChange(g.id)}
               disabled={isLoading}
+              title={g.desc}
             >
-              <span className={styles.genreLabel}>{g.label}</span>
-              <span className={styles.genreDesc}>{g.desc}</span>
+              {g.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* TTS Provider */}
-      <div className={styles.field}>
-        <label className={styles.label}>
-          <span className={styles.labelDot} />
-          Voice Engine
-        </label>
-        <div className={styles.genreGrid}>
-          {TTS_PROVIDERS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              className={`${styles.genreCard} ${ttsProvider === p.id ? styles.genreActive : ''}`}
-              onClick={() => handleProviderChange(p.id)}
-              disabled={isLoading}
-            >
-              <span className={styles.genreLabel}>{p.label}</span>
-              <span className={styles.genreDesc}>{p.desc}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Voice picker */}
-      <div className={styles.field}>
-          <label className={styles.label}>
-            <span className={styles.labelDot} />
-            Narrator Voice
-          </label>
-          <div className={styles.pills}>
-            {voiceOptions.map(v => (
-              <button
-                key={v.id}
-                type="button"
-                className={`${styles.pill} ${voiceId === v.id ? styles.pillActive : ''}`}
-                onClick={() => setVoiceId(v.id)}
-                disabled={isLoading}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-      {/* Row: Language + Style */}
-      <div className={styles.row}>
+      {/* ── Language + Image Style inline ── */}
+      <div className={styles.inlineRow}>
         <div className={styles.field}>
-          <label className={styles.label}>
-            <span className={styles.labelDot} />
-            Language
-          </label>
+          <label className={styles.label}><span className={styles.labelDot} />Language</label>
           <div className={styles.pills}>
             {LANGUAGES.map(l => (
-              <button
-                key={l.id}
-                type="button"
+              <button key={l.id} type="button"
                 className={`${styles.pill} ${language === l.id ? styles.pillActive : ''}`}
-                onClick={() => setLanguage(l.id)}
-                disabled={isLoading}
-              >
+                onClick={() => setLanguage(l.id)} disabled={isLoading}>
                 {l.label}
               </button>
             ))}
           </div>
         </div>
-
         <div className={styles.field}>
-          <label className={styles.label}>
-            <span className={styles.labelDot} />
-            Image Style
-          </label>
+          <label className={styles.label}><span className={styles.labelDot} />Image Style</label>
           <div className={styles.pills}>
             {IMAGE_STYLES.map(s => (
-              <button
-                key={s.id}
-                type="button"
+              <button key={s.id} type="button"
                 className={`${styles.pill} ${imageStyle === s.id ? styles.pillActive : ''}`}
-                onClick={() => setImageStyle(s.id)}
-                disabled={isLoading}
-              >
+                onClick={() => setImageStyle(s.id)} disabled={isLoading}>
                 {s.label}
               </button>
             ))}
@@ -335,50 +287,7 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
         </div>
       </div>
 
-      {/* Transition style */}
-      <div className={styles.field}>
-        <label className={styles.label}>
-          <span className={styles.labelDot} />
-          Transition Style
-        </label>
-        <div className={styles.genreGrid}>
-          {TRANSITIONS.map(t => (
-            <button
-              key={t.id}
-              type="button"
-              className={`${styles.genreCard} ${transitionStyle === t.id ? styles.genreActive : ''}`}
-              onClick={() => setTransitionStyle(t.id)}
-              disabled={isLoading}
-            >
-              <span className={styles.genreLabel}>{t.label}</span>
-              <span className={styles.genreDesc}>{t.desc}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Subtitle style */}
-      <div className={styles.field}>
-        <label className={styles.label}>
-          <span className={styles.labelDot} />
-          Subtitle Style
-        </label>
-        <div className={styles.pills}>
-          {SUBTITLE_PRESETS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              className={`${styles.pill} ${subtitlePreset === p.id ? styles.pillActive : ''}`}
-              onClick={() => setSubtitlePreset(p.id)}
-              disabled={isLoading}
-            >
-              {p.emoji} {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Duration slider */}
+      {/* ── Duration slider ── */}
       <div className={styles.field}>
         <label className={styles.label}>
           <span className={styles.labelDot} />
@@ -386,22 +295,99 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
           <span className={styles.labelValue}>{duration}s</span>
         </label>
         <div className={styles.sliderWrap}>
-          <input
-            type="range"
-            className={styles.slider}
-            min={20}
-            max={180}
-            step={10}
-            value={duration}
-            onChange={e => setDuration(Number(e.target.value))}
-            disabled={isLoading}
-          />
+          <input type="range" className={styles.slider}
+            min={20} max={180} step={10} value={duration}
+            onChange={e => setDuration(Number(e.target.value))} disabled={isLoading} />
           <div className={styles.sliderTicks}>
             {[20, 60, 120, 180].map(v => (
               <span key={v} className={styles.tick}>{v}s</span>
             ))}
           </div>
         </div>
+      </div>
+
+      {/* ── Voice Engine ── */}
+      <div className={styles.field}>
+        <label className={styles.label}><span className={styles.labelDot} />Voice Engine</label>
+        <div className={styles.providerRow}>
+          {TTS_PROVIDERS.map(p => (
+            <button key={p.id} type="button"
+              className={`${styles.providerBtn} ${ttsProvider === p.id ? styles.providerActive : ''}`}
+              onClick={() => handleProviderChange(p.id)} disabled={isLoading}>
+              <span className={styles.providerLabel}>{p.label}</span>
+              <span className={styles.providerDesc}>{p.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Narrator Voice (horizontal scroll) ── */}
+      <div className={styles.field}>
+        <label className={styles.label}><span className={styles.labelDot} />Narrator Voice</label>
+        <div className={styles.voiceScroll}>
+          {voiceOptions.map(v => (
+            <button key={v.id} type="button"
+              className={`${styles.voiceChip} ${voiceId === v.id ? styles.voiceChipActive : ''}`}
+              onClick={() => setVoiceId(v.id)} disabled={isLoading}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Advanced Settings (collapsible) ── */}
+      <div className={styles.advanced}>
+        <button type="button" className={styles.advancedToggle}
+          onClick={() => setShowAdvanced(v => !v)} disabled={isLoading}>
+          <span>⚙️ Advanced Settings</span>
+          <span className={styles.advancedArrow}>{showAdvanced ? '▲' : '▼'}</span>
+        </button>
+        {showAdvanced && (
+          <div className={styles.advancedBody}>
+            {/* Script Model */}
+            <div className={styles.field}>
+              <label className={styles.label}><span className={styles.labelDot} />Script Model</label>
+              <div className={styles.providerRow}>
+                {SCRIPT_PROVIDERS.map(p => (
+                  <button key={p.id} type="button"
+                    className={`${styles.providerBtn} ${scriptProvider === p.id ? styles.providerActive : ''}`}
+                    onClick={() => setScriptProvider(p.id)} disabled={isLoading}
+                    title={p.desc}>
+                    <span className={styles.providerLabel}>{p.label}</span>
+                    <span className={styles.providerDesc}>{p.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Transition */}
+            <div className={styles.field}>
+              <label className={styles.label}><span className={styles.labelDot} />Transitions</label>
+              <div className={styles.pills}>
+                {TRANSITIONS.map(t => (
+                  <button key={t.id} type="button"
+                    className={`${styles.pill} ${transitionStyle === t.id ? styles.pillActive : ''}`}
+                    onClick={() => setTransitionStyle(t.id)} disabled={isLoading}
+                    title={t.desc}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Subtitle */}
+            <div className={styles.field}>
+              <label className={styles.label}><span className={styles.labelDot} />Subtitles</label>
+              <div className={styles.pills}>
+                {SUBTITLE_PRESETS.map(p => (
+                  <button key={p.id} type="button"
+                    className={`${styles.pill} ${subtitlePreset === p.id ? styles.pillActive : ''}`}
+                    onClick={() => setSubtitlePreset(p.id)} disabled={isLoading}>
+                    {p.emoji} {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Submit */}

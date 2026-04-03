@@ -1,20 +1,33 @@
 import { useState } from 'react';
-import { GeneratorForm } from '../components/GeneratorForm';
+import { GeneratorForm }   from '../components/GeneratorForm';
 import { ProgressTracker } from '../components/ProgressTracker';
-import { SceneGallery } from '../components/SceneGallery';
-import { VideoResult } from '../components/VideoResult';
-import { ScriptView } from '../components/ScriptView';
+import { SceneGallery }    from '../components/SceneGallery';
+import { VideoResult }     from '../components/VideoResult';
+import { ScriptView }      from '../components/ScriptView';
+import { VideoLibrary }    from '../components/VideoLibrary';
 import { useVideoGeneration } from '../hooks/useVideoGeneration';
+import { useUserVideos }      from '../hooks/useUserVideos';
 import type { SceneData } from '@integration/types';
 import styles from './Studio.module.css';
 
+type LeftTab = 'generate' | 'library';
+
 export function Studio() {
   const { step, video, error, isLoading, generate, reset } = useVideoGeneration();
-  const [scenes, setScenes]       = useState<SceneData[]>([]);
-  const [rightTab, setRightTab]   = useState<'gallery' | 'script'>('gallery');
+  const { videos, loading: libLoading, error: libError, refresh, remove } = useUserVideos();
 
-  // Sync scenes from video data when generation completes
+  const [scenes,   setScenes]   = useState<SceneData[]>([]);
+  const [rightTab, setRightTab] = useState<'gallery' | 'script'>('gallery');
+  const [leftTab,  setLeftTab]  = useState<LeftTab>('generate');
+
   const currentScenes = video?.scenes ?? scenes;
+
+  // After generation completes, switch to generate tab and refresh library
+  const handleGenerate = async (payload: any) => {
+    setLeftTab('generate');
+    await generate(payload);
+    refresh(); // pick up the newly saved video
+  };
 
   return (
     <div className={styles.page}>
@@ -27,39 +40,102 @@ export function Studio() {
 
       <div className={styles.layout}>
 
-        {/* ── Left panel — form / result ── */}
+        {/* ══════════════════════════════════════════
+            LEFT PANEL — Generate / Library tabs
+        ══════════════════════════════════════════ */}
         <aside className={styles.panel}>
           <div className={styles.panelCard}>
-            {/* Logo/title */}
+
+            {/* ── Logo header ── */}
             <div className={styles.panelHeader}>
               <div className={styles.panelTitle}>
-                <span className={styles.titleIcon}>▶</span>
+                <div className={styles.titleIconWrap}>
+                  <span className={styles.titleIcon}>▶</span>
+                </div>
                 <div>
                   <h1 className={styles.title}>AI Video Studio</h1>
                   <p className={styles.subtitle}>Generate cinematic short-form videos</p>
                 </div>
               </div>
+
+              {/* Left panel tab bar */}
+              <div className={styles.leftTabBar}>
+                <button
+                  className={`${styles.leftTab} ${leftTab === 'generate' ? styles.leftTabActive : ''}`}
+                  onClick={() => setLeftTab('generate')}
+                >
+                  🎬 Generate
+                </button>
+                <button
+                  className={`${styles.leftTab} ${leftTab === 'library' ? styles.leftTabActive : ''}`}
+                  onClick={() => setLeftTab('library')}
+                >
+                  📁 My Videos
+                  {videos.length > 0 && (
+                    <span className={styles.leftTabBadge}>{videos.length}</span>
+                  )}
+                </button>
+              </div>
             </div>
 
-            {step === 'complete' && video ? (
-              <VideoResult video={video} onReset={reset} />
+            {/* ── Left panel content ── */}
+            {leftTab === 'generate' ? (
+              step === 'complete' && video ? (
+                <VideoResult video={video} onReset={reset} />
+              ) : (
+                <GeneratorForm onSubmit={handleGenerate} isLoading={isLoading} />
+              )
             ) : (
-              <GeneratorForm onSubmit={generate} isLoading={isLoading} />
+              /* ── My Videos (compact list) ── */
+              <div className={styles.libPanel}>
+                <p className={styles.libPanelHint}>
+                  Hover a card on the right to <strong>view</strong> or <strong>edit</strong>.
+                </p>
+              </div>
             )}
           </div>
         </aside>
 
-        {/* ── Right panel — progress + scenes ── */}
+        {/* ══════════════════════════════════════════
+            RIGHT PANEL — Progress / Scenes / Library
+        ══════════════════════════════════════════ */}
         <main className={styles.main}>
-          {step === 'idle' ? (
-            <IdleState />
+
+          {/* Library tab selected → show full library */}
+          {leftTab === 'library' ? (
+            <div className={styles.mainCard}>
+              <VideoLibrary
+                videos={videos}
+                loading={libLoading}
+                error={libError}
+                onRefresh={refresh}
+                onDelete={remove}
+              />
+            </div>
+
+          /* Generate tab — normal pipeline states */
+          ) : step === 'idle' ? (
+            <div className={styles.mainCard}>
+              {videos.length > 0 ? (
+                <VideoLibrary
+                  videos={videos}
+                  loading={libLoading}
+                  error={libError}
+                  onRefresh={refresh}
+                  onDelete={remove}
+                />
+              ) : (
+                <IdleState />
+              )}
+            </div>
+
           ) : step === 'error' ? (
             <div className={styles.mainCard}>
               <ProgressTracker step={step} error={error} />
             </div>
+
           ) : step === 'complete' && currentScenes.length > 0 ? (
             <div className={styles.mainCard}>
-              {/* Tab bar */}
               <div className={styles.tabBar}>
                 <button
                   className={`${styles.tab} ${rightTab === 'gallery' ? styles.tabActive : ''}`}
@@ -84,10 +160,10 @@ export function Studio() {
                 />
               )}
             </div>
+
           ) : (
             <div className={styles.mainCard}>
               <ProgressTracker step={step} error={error} />
-              {/* Teaser skeleton while generating */}
               <div className={styles.skeletonGrid}>
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className={styles.skeletonCard} style={{ animationDelay: `${i * 0.1}s` }} />
