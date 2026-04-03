@@ -25,18 +25,17 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "sourceMap": true,
-    "rootDir": "..",
+    "rootDir": "src",
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@integration/*": ["../integration/*"],
+      "@integration/*": ["src/integration/*"],
       "axios": ["node_modules/axios/index.d.ts"],
       "axios/*": ["node_modules/axios/*"]
     },
-    "moduleResolution": "bundler",
-    "ignoreDeprecations": "6.0"
+    "moduleResolution": "bundler"
   },
-  "include": ["src", "../integration"],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

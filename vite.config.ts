@@ -7,8 +7,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@integration': path.resolve(__dirname, '../integration'),
+      '@integration': path.resolve(__dirname, './src/integration'),
     },
+  },
+  build: {
+    // Standard dist/ output.
+    // - Vercel deployment: Vercel picks this up automatically.
+    // - Single-server / Docker: Dockerfile copies dist/ → Aintegration/public/
+    outDir: 'dist',
+    emptyOutDir: true,
   },
   server: {
     port: 5173,
