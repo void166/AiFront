@@ -30,9 +30,17 @@ export interface SignupResponse {
   message?: string;
 }
 
+// ─── Base URL ─────────────────────────────────────────────────────────────────
+// Dev:  Vite proxy rewrites /api → localhost:4900, so API_BASE = ''
+// Prod: set VITE_API_URL=https://your-app.railway.app in Vercel env vars
+const API_BASE: string =
+  typeof (import.meta as any).env !== 'undefined'
+    ? ((import.meta as any).env.VITE_API_URL ?? '')
+    : '';
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-async function postJson(url: string, body: unknown): Promise<unknown> {
-  const res = await fetch(url, {
+async function postJson(path: string, body: unknown): Promise<unknown> {
+  const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
