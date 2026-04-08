@@ -8,47 +8,38 @@ export function Header() {
 
   return (
     <header className={styles.header}>
-      <div className={styles.inner}>
-        <div className={styles.logo} onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <span className={styles.logoIcon}>▶</span>
-          <span className={styles.logoText}>
-            REEL<span className={styles.logoAccent}>AI</span>
-          </span>
-        </div>
-
-        <nav className={styles.nav}>
-          <span className={styles.badge}>Beta</span>
-
-          {isAuthed ? (
-            <>
-              <span className={styles.email}>{user?.email}</span>
-              <button
-                className={styles.authBtn}
-                onClick={() => { logout(); navigate('/login'); }}
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className={styles.authBtn}
-                onClick={() => navigate('/login')}
-              >
-                Sign In
-              </button>
-              <button
-                className={`${styles.authBtn} ${styles.authBtnAccent}`}
-                onClick={() => navigate('/signup')}
-              >
-                Sign Up
-              </button>
-            </>
-          )}
-        </nav>
+      <div className={styles.logo} onClick={() => navigate('/')}>
+        <span className={styles.logoIcon}>⚡</span>
+        <span className={styles.logoText}>ViralAI</span>
       </div>
-      {/* Ambient scanline */}
-      <div className={styles.scanline} />
+
+      <nav className={styles.nav}>
+        <span className={styles.badge}>Beta</span>
+
+        {isAuthed ? (
+          <>
+            <span className={styles.email}>{user?.email}</span>
+            <button
+              className={styles.authBtn}
+              onClick={() => { logout(); navigate('/login'); }}
+            >
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <>
+            <button className={styles.authBtn} onClick={() => navigate('/login')}>
+              Sign In
+            </button>
+            <button
+              className={`${styles.authBtn} ${styles.authBtnAccent}`}
+              onClick={() => navigate('/signup')}
+            >
+              Sign Up
+            </button>
+          </>
+        )}
+      </nav>
     </header>
   );
 }

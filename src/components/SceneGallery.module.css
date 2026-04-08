@@ -8,12 +8,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #7C3AED, #00E5FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-
 .headingIcon { font-size: 20px; }
 
 /* ── Grid ── */
@@ -26,23 +27,21 @@
 /* ── Card ── */
 .card {
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
-  grid-column: span 1;
 }
-
 .card:hover {
-  border-color: rgba(230,57,70,0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  border-color: rgba(0,229,255,0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0,229,255,0.12);
 }
-
 .cardOpen {
   grid-column: 1 / -1;
-  border-color: var(--border-glow);
+  border-color: rgba(0,229,255,0.4) !important;
+  box-shadow: 0 0 30px rgba(0,229,255,0.12);
   cursor: default;
 }
 
@@ -51,102 +50,64 @@
   position: relative;
   aspect-ratio: 9/16;
   overflow: hidden;
-  background: var(--bg-surface);
+  background: rgba(255,255,255,0.04);
 }
-
 .cardOpen .thumb {
   aspect-ratio: unset;
   height: 220px;
 }
-
 .thumb img {
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   object-fit: cover;
   transition: transform 0.4s ease;
 }
-
-.card:hover .thumb img {
-  transform: scale(1.04);
-}
+.card:hover .thumb img { transform: scale(1.05); }
 
 .thumbPlaceholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  opacity: 0.3;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; opacity: 0.3;
 }
 
 .sceneNum {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  position: absolute; top: 8px; left: 8px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
   color: #fff;
   background: rgba(0,0,0,0.7);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 6px; border-radius: 4px;
   backdrop-filter: blur(4px);
 }
-
 .sceneTime {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--gold);
+  position: absolute; top: 8px; right: 8px;
+  font-size: 10px; font-weight: 600;
+  color: var(--cyan);
   background: rgba(0,0,0,0.7);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 6px; border-radius: 4px;
   backdrop-filter: blur(4px);
 }
-
 .duration {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  font-size: 10px;
-  font-weight: 600;
+  position: absolute; bottom: 8px; right: 8px;
+  font-size: 10px; font-weight: 600;
   color: #fff;
   background: rgba(0,0,0,0.7);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 6px; border-radius: 4px;
   backdrop-filter: blur(4px);
 }
 
-/* ── Details (expanded) ── */
+/* ── Details expanded ── */
 .details {
   padding: 16px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(255,255,255,0.07);
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
-.sceneTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.4;
-}
-
-.sceneDesc {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
+.sceneTitle { font-size: 14px; font-weight: 600; color: var(--text-primary); line-height: 1.4; }
+.sceneDesc  { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
 
 .audio {
-  width: 100%;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  filter: invert(0.9) hue-rotate(180deg) brightness(0.8);
+  width: 100%; height: 36px; border-radius: var(--radius-sm);
+  filter: invert(0.85) hue-rotate(180deg) brightness(0.8);
 }
 
 /* ── Editable fields ── */
@@ -155,78 +116,47 @@
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
   border-radius: var(--radius-md);
 }
-
 .editLabel {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  text-transform: uppercase;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+  color: var(--text-secondary); text-transform: uppercase;
   margin-top: 6px;
 }
-
 .editLabel:first-child { margin-top: 0; }
-
 .editTextarea {
   width: 100%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 13px; line-height: 1.5;
   padding: 8px 10px;
   resize: vertical;
   transition: border-color 0.15s;
   font-family: inherit;
-  box-sizing: border-box;
 }
+.editTextarea:focus { border-color: rgba(0,229,255,0.4); box-shadow: 0 0 0 2px rgba(0,229,255,0.08); }
+.editTextarea:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.editTextarea:focus {
-  outline: none;
-  border-color: var(--border-glow);
-}
-
-.editTextarea:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Regenerate ── */
-.regenRow {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
+/* ── Regen buttons ── */
+.regenRow { display: flex; gap: 8px; flex-wrap: wrap; }
 .regenBtn {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
   border-radius: var(--radius-sm);
   padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12px; font-weight: 600;
   color: var(--text-secondary);
   text-transform: capitalize;
   transition: all 0.15s;
 }
-
 .regenBtn:hover:not(:disabled) {
-  border-color: var(--border-glow);
-  color: var(--text-primary);
-  background: rgba(230,57,70,0.08);
+  border-color: rgba(0,229,255,0.4);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.08);
 }
-
-.regenBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.regenError {
-  font-size: 12px;
-  color: #f87171;
-}
+.regenBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.regenError { font-size: 12px; color: #f87171; }

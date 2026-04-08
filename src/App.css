@@ -1,2 +1,7 @@
 /* App-level overrides — minimal, most styles are in module.css files */
 * { box-sizing: border-box; }
+
+/* Offset content below fixed header for pages that use it */
+.withHeader {
+  padding-top: 60px;
+}

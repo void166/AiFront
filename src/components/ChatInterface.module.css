@@ -1,0 +1,449 @@
+/* ─── Chat container ─────────────────────────────────────────────────────────── */
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Messages area ──────────────────────────────────────────────────────────── */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124,58,237,0.3) transparent;
+}
+.messages::-webkit-scrollbar { width: 3px; }
+.messages::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 3px; }
+
+/* ─── Message row ───────────────────────────────────────────────────────────── */
+.msgRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  animation: fadeUp 0.3s ease both;
+}
+.msgRowUser {
+  flex-direction: row-reverse;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Avatar ────────────────────────────────────────────────────────────────── */
+.avatar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7C3AED, #00E5FF);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 0 14px rgba(124,58,237,0.4);
+}
+
+/* ─── Bubbles ───────────────────────────────────────────────────────────────── */
+.bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.bubbleAi {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-bottom-left-radius: 4px;
+  color: var(--text-primary);
+}
+.bubbleUser {
+  background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  border-bottom-right-radius: 4px;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+  max-width: 75%;
+}
+
+/* ─── Typing dots ───────────────────────────────────────────────────────────── */
+.generatingRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  animation: fadeUp 0.3s ease both;
+}
+.genDot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: rgba(0,229,255,0.7);
+  animation: dotBounce 1.2s ease-in-out infinite;
+}
+@keyframes dotBounce {
+  0%,80%,100% { transform: scale(0.7); opacity: 0.5; }
+  40%          { transform: scale(1);   opacity: 1; }
+}
+
+/* ─── Rich card wrapper ─────────────────────────────────────────────────────── */
+.richCard {
+  width: 100%;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.anim {
+  animation: fadeUp 0.35s ease both;
+}
+
+/* ─── Genre grid ────────────────────────────────────────────────────────────── */
+.genreGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.genreCard {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  font-size: 12px;
+}
+.genreCard:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+.genreCardActive {
+  transform: translateY(-2px) scale(1.04) !important;
+}
+.genreLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.4;
+}
+
+/* ─── Style horizontal scroll ───────────────────────────────────────────────── */
+.styleRow {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+.styleRow::-webkit-scrollbar { display: none; }
+
+.styleCard {
+  flex-shrink: 0;
+  width: 110px;
+  height: 150px;
+  border-radius: 18px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+}
+.styleCard:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
+.styleCardActive {
+  border-color: var(--cyan) !important;
+  box-shadow: 0 0 24px rgba(0,229,255,0.35), 0 8px 24px rgba(0,0,0,0.3) !important;
+  transform: translateY(-4px) scale(1.05) !important;
+}
+.styleLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Audio step ────────────────────────────────────────────────────────────── */
+.richLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 8px 0;
+}
+
+.providerRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.providerBtn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  padding: 10px 8px;
+  display: flex; flex-direction: column; gap: 3px;
+  text-align: center; cursor: pointer;
+  transition: all 0.16s ease;
+}
+.providerBtn:hover {
+  border-color: rgba(0,229,255,0.3);
+  background: rgba(0,229,255,0.06);
+}
+.providerActive {
+  border-color: var(--cyan) !important;
+  background: rgba(0,229,255,0.1) !important;
+  box-shadow: 0 0 14px rgba(0,229,255,0.2);
+}
+.providerName { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.providerDesc { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
+
+.voiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.voicePill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.voicePill:hover { border-color: rgba(0,229,255,0.3); color: var(--text-primary); }
+.voicePillActive {
+  border-color: var(--cyan) !important;
+  background: rgba(0,229,255,0.12) !important;
+  color: var(--cyan) !important;
+  box-shadow: 0 0 12px rgba(0,229,255,0.2);
+}
+
+.langRow { display: flex; gap: 8px; }
+.langBtn {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 10px;
+  padding: 9px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.langBtn:hover { border-color: rgba(0,229,255,0.3); color: var(--text-primary); }
+.langActive {
+  border-color: var(--cyan) !important;
+  background: rgba(0,229,255,0.1) !important;
+  color: var(--cyan) !important;
+}
+
+/* Duration */
+.durationVal {
+  color: var(--cyan);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 8px;
+}
+.slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.1); cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: linear-gradient(135deg, #7C3AED, #00E5FF);
+  box-shadow: 0 0 12px rgba(124,58,237,0.5);
+  cursor: pointer;
+}
+.sliderTicks {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text-muted); margin-top: 6px;
+}
+
+/* ─── Confirm audio button ───────────────────────────────────────────────────── */
+.confirmAudio {
+  margin-top: 18px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,229,255,0.35);
+  background: rgba(0,229,255,0.08);
+  color: var(--cyan);
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.confirmAudio:hover {
+  background: rgba(0,229,255,0.15);
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(0,229,255,0.2);
+}
+
+/* ─── Summary card ───────────────────────────────────────────────────────────── */
+.summary {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 14px;
+}
+.summaryRow { display: flex; justify-content: space-between; align-items: center; }
+.summaryKey {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.summaryVal {
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  text-align: right; max-width: 60%; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ─── Generate button ────────────────────────────────────────────────────────── */
+.generateBtn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, #7C3AED, #5B21B6, #00E5FF);
+  background-size: 200% 200%;
+  animation: gx 3s ease infinite;
+  color: #fff;
+  font-size: 16px; font-weight: 800; letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 0 40px rgba(124,58,237,0.4), 0 0 80px rgba(0,229,255,0.15);
+}
+.generateBtn:hover:not(:disabled) {
+  transform: scale(1.03);
+  box-shadow: 0 0 60px rgba(124,58,237,0.55), 0 0 100px rgba(0,229,255,0.2);
+}
+.generateBtn:active:not(:disabled) { transform: scale(0.97); }
+.generateBtn:disabled {
+  opacity: 0.5; cursor: not-allowed; animation: none;
+  background: rgba(124,58,237,0.3);
+}
+
+/* ─── Done state ─────────────────────────────────────────────────────────────── */
+.doneText {
+  font-size: 15px; font-weight: 700; color: var(--cyan); text-align: center;
+  margin-bottom: 12px;
+}
+.newVideoBtn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,229,255,0.35);
+  background: rgba(0,229,255,0.07);
+  color: var(--cyan); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.18s;
+}
+.newVideoBtn:hover {
+  background: rgba(0,229,255,0.14); border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(0,229,255,0.2);
+}
+
+/* ─── Input area ─────────────────────────────────────────────────────────────── */
+.inputArea {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(10,10,15,0.5);
+  backdrop-filter: blur(10px);
+}
+
+/* Templates */
+.templates {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.templatePill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.templatePill:hover {
+  border-color: rgba(0,229,255,0.4);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.07);
+  box-shadow: 0 0 12px rgba(0,229,255,0.15);
+}
+
+/* Input row */
+.inputRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input:focus {
+  border-color: rgba(0,229,255,0.45);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+}
+
+.sendBtn {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #7C3AED, #00E5FF);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(124,58,237,0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sendBtn:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 0 24px rgba(124,58,237,0.55);
+}
+.sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes gx {
+  0%,100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* ─── Mobile ─────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .genreGrid { grid-template-columns: repeat(2, 1fr); }
+  .providerRow { grid-template-columns: 1fr 1fr; }
+}

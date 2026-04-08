@@ -21,10 +21,6 @@ export function Login() {
 
     try {
       const res = await login({ email: email.trim(), password });
-
-      console.log("login response =", res);
-      console.log("login user =", res.user);
-      console.log("login token =", res.user?.token);
       if (res.success && res.user) {
         setAuth(res.user);
         navigate('/');
@@ -32,9 +28,7 @@ export function Login() {
         setError(res.message ?? 'Login failed. Check your credentials.');
       }
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong';
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -42,15 +36,16 @@ export function Login() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.blob1} />
+      <div className={styles.blob2} />
+
       <div className={styles.card}>
-        {/* Header */}
         <div className={styles.header}>
-          <div className={styles.icon}>▶</div>
+          <div className={styles.icon}>⚡</div>
           <h1 className={styles.title}>Welcome back</h1>
-          <p className={styles.subtitle}>Sign in to your ReelAI account</p>
+          <p className={styles.subtitle}>Sign in to your ViralAI account</p>
         </div>
 
-        {/* Form */}
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.field}>
             <label className={styles.label}>Email</label>
@@ -64,7 +59,6 @@ export function Login() {
               autoFocus
             />
           </div>
-
           <div className={styles.field}>
             <label className={styles.label}>Password</label>
             <input
@@ -94,7 +88,6 @@ export function Login() {
           </button>
         </form>
 
-        {/* Footer */}
         <p className={styles.footer}>
           Don&apos;t have an account?{' '}
           <button className={styles.link} onClick={() => navigate('/signup')}>
