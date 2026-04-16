@@ -43,7 +43,7 @@ export function Studio() {
       <div className={styles.layout}>
 
         {/* ══════════════════════════════════════════
-            LEFT PANEL — AI Chat Interface
+            RIGHT PANEL — AI Chat Interface (order:2)
         ══════════════════════════════════════════ */}
         <aside className={styles.panel}>
           {/* Logo header */}

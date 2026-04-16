@@ -44,21 +44,22 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 1fr 420px;
   min-height: 100vh;
 }
 
-/* ── Left panel ── */
+/* ── Right chat panel ── */
 .panel {
-  border-right: 1px solid rgba(255,255,255,0.07);
-  background: rgba(10,10,15,0.6);
-  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255,255,255,0.07);
+  background: rgba(10,10,15,0.72);
+  backdrop-filter: blur(24px);
   max-height: 100vh;
   position: sticky;
   top: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  order: 2;
 }
 .panelCard {
   padding: 28px 24px 0;
@@ -298,9 +299,10 @@
   .panel {
     position: relative;
     max-height: none;
-    border-right: none;
+    order: 1;
+    border-left: none;
     border-bottom: 1px solid rgba(255,255,255,0.07);
     top: 0;
   }
-  .main { padding: 20px; }
+  .main { padding: 20px; order: 2; }
 }
