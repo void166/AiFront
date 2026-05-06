@@ -68,6 +68,7 @@
   flex-direction: column;
   gap: 10px;
   cursor: pointer;
+  position: relative;
 }
 
 /* ── Thumbnail ── */
@@ -170,6 +171,32 @@
 .card:hover .deleteBtn { opacity: 0.45; }
 .deleteBtn:hover { opacity: 1 !important; }
 
+.moveBtn {
+  background: none; border: none; font-size: 13px; cursor: pointer;
+  opacity: 0; transition: opacity 0.2s; padding: 2px; border-radius: 4px; line-height: 1;
+}
+.card:hover .moveBtn { opacity: 0.45; }
+.moveBtn:hover { opacity: 1 !important; }
+
+/* ── Move dropdown ── */
+.moveMenu {
+  position: absolute; bottom: 44px; right: 4px;
+  background: rgba(12,12,18,0.97); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 4px; z-index: 30; min-width: 160px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  animation: fadeUp .15s ease both;
+}
+.moveMenuHeader {
+  padding: 5px 12px 4px; font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.moveMenuItem {
+  padding: 7px 12px; font-size: 13px; cursor: pointer; border-radius: 6px;
+  transition: background .1s; white-space: nowrap; color: var(--text-primary);
+}
+.moveMenuItem:hover { background: rgba(0,229,255,0.1); color: var(--cyan); }
+.moveMenuSep { height: 1px; background: rgba(255,255,255,0.07); margin: 3px 4px; }
+
 /* ── Skeleton ── */
 .skeletonGrid {
   display: grid;
@@ -202,6 +229,10 @@
 .emptyBtn:hover { border-color: rgba(0,229,255,0.3); color: var(--cyan); background: rgba(0,229,255,0.06); }
 
 /* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @keyframes shimmer {
   from { background-position: -200% 0; }
   to   { background-position:  200% 0; }

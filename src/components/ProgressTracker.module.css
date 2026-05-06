@@ -80,12 +80,30 @@
   font-weight: 700;
 }
 
+.stepInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 .stepLabel {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
 }
 .done .stepLabel, .active .stepLabel { color: var(--text-primary); }
+.stepMessage {
+  font-size: 12px;
+  color: rgba(0, 229, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* Sweep glow on active */
 .pulse {

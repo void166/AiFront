@@ -72,6 +72,19 @@
   white-space: nowrap;
 }
 
+.navLink {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.navLink:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+
 .authBtn {
   font-size: 13px;
   font-weight: 600;

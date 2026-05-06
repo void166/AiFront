@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LibraryVideo } from '@integration/types';
+import { getProjects, moveVideo, type ProjectData } from '@integration/projectApi';
+import { useAuth } from '../context/AuthContext';
 import { VideoPlayerModal } from './VideoPlayerModal';
 import styles from './VideoLibrary.module.css';
 
@@ -47,9 +49,13 @@ interface CardProps {
   video: LibraryVideo;
   onView: (v: LibraryVideo) => void;
   onDelete?: (id: string) => Promise<void>;
+  projects?: ProjectData[];
+  showMoveMenu?: boolean;
+  onToggleMoveMenu?: (e: React.MouseEvent) => void;
+  onMove?: (videoId: string, projectId: string | null) => void;
 }
 
-function VideoCard({ video, onView, onDelete }: CardProps) {
+function VideoCard({ video, onView, onDelete, projects = [], showMoveMenu, onToggleMoveMenu, onMove }: CardProps) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
 
@@ -118,27 +124,66 @@ function VideoCard({ video, onView, onDelete }: CardProps) {
         <p className={styles.videoTitle}>{video.title || video.topic}</p>
         <div className={styles.meta}>
           <span className={styles.metaDate}>{fmtDate(video.createdAt)}</span>
-          {onDelete && (
-            <button
-              className={styles.deleteBtn}
-              onClick={handleDelete}
-              disabled={deleting}
-              title="Delete video"
-            >
-              {deleting ? '…' : '🗑'}
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {projects.length > 0 && onToggleMoveMenu && (
+              <button
+                className={styles.moveBtn}
+                onClick={onToggleMoveMenu}
+                title="Move to project"
+              >📁</button>
+            )}
+            {onDelete && (
+              <button
+                className={styles.deleteBtn}
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Delete video"
+              >
+                {deleting ? '…' : '🗑'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Move to project dropdown */}
+      {showMoveMenu && onMove && (
+        <div className={styles.moveMenu} onClick={e => e.stopPropagation()}>
+          <div className={styles.moveMenuHeader}>Move to…</div>
+          <div className={styles.moveMenuItem} onClick={() => onMove(video.id, null)}>
+            🗂️ Unassigned
+          </div>
+          <div className={styles.moveMenuSep} />
+          {projects.map(p => (
+            <div key={p.id} className={styles.moveMenuItem} onClick={() => onMove(video.id, p.id)}>
+              📂 {p.title}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 export function VideoLibrary({ videos, loading, error, onRefresh, onDelete }: Props) {
+  const { token } = useAuth();
   const [playingVideo, setPlayingVideo] = useState<LibraryVideo | null>(null);
+  const [projects,     setProjects]     = useState<ProjectData[]>([]);
+  const [moveMenuId,   setMoveMenuId]   = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    getProjects(token).then(({ projects: ps }) => setProjects(ps)).catch(() => {});
+  }, [token]);
+
+  const handleMove = async (videoId: string, projectId: string | null) => {
+    if (!token) return;
+    try { await moveVideo(videoId, projectId, token); onRefresh(); } catch {}
+    setMoveMenuId(null);
+  };
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} onClick={() => setMoveMenuId(null)}>
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -179,6 +224,10 @@ export function VideoLibrary({ videos, loading, error, onRefresh, onDelete }: Pr
               video={v}
               onView={setPlayingVideo}
               onDelete={onDelete}
+              projects={projects}
+              showMoveMenu={moveMenuId === v.id}
+              onToggleMoveMenu={e => { e.stopPropagation(); setMoveMenuId(moveMenuId === v.id ? null : v.id); }}
+              onMove={handleMove}
             />
           ))}
         </div>

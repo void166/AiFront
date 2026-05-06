@@ -306,6 +306,22 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
         </div>
       </div>
 
+      {/* ── Script Model ── */}
+      <div className={styles.field}>
+        <label className={styles.label}><span className={styles.labelDot} />Script Model</label>
+        <div className={styles.providerRow}>
+          {SCRIPT_PROVIDERS.map(p => (
+            <button key={p.id} type="button"
+              className={`${styles.providerBtn} ${scriptProvider === p.id ? styles.providerActive : ''}`}
+              onClick={() => setScriptProvider(p.id)} disabled={isLoading}
+              title={p.desc}>
+              <span className={styles.providerLabel}>{p.label}</span>
+              <span className={styles.providerDesc}>{p.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── Voice Engine ── */}
       <div className={styles.field}>
         <label className={styles.label}><span className={styles.labelDot} />Voice Engine</label>
@@ -344,21 +360,6 @@ export function GeneratorForm({ onSubmit, isLoading }: Props) {
         </button>
         {showAdvanced && (
           <div className={styles.advancedBody}>
-            {/* Script Model */}
-            <div className={styles.field}>
-              <label className={styles.label}><span className={styles.labelDot} />Script Model</label>
-              <div className={styles.providerRow}>
-                {SCRIPT_PROVIDERS.map(p => (
-                  <button key={p.id} type="button"
-                    className={`${styles.providerBtn} ${scriptProvider === p.id ? styles.providerActive : ''}`}
-                    onClick={() => setScriptProvider(p.id)} disabled={isLoading}
-                    title={p.desc}>
-                    <span className={styles.providerLabel}>{p.label}</span>
-                    <span className={styles.providerDesc}>{p.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
             {/* Transition */}
             <div className={styles.field}>
               <label className={styles.label}><span className={styles.labelDot} />Transitions</label>

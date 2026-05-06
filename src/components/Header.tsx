@@ -16,6 +16,12 @@ export function Header() {
       <nav className={styles.nav}>
         <span className={styles.badge}>Beta</span>
 
+        {isAuthed && (
+          <button className={styles.navLink} onClick={() => navigate('/projects')}>
+            📁 Projects
+          </button>
+        )}
+
         {isAuthed ? (
           <>
             <span className={styles.email}>{user?.email}</span>

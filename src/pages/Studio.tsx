@@ -11,7 +11,7 @@ import type { SceneData } from '@integration/types';
 import styles from './Studio.module.css';
 
 export function Studio() {
-  const { step, video, error, isLoading, generate, reset } = useVideoGeneration();
+  const { step, progress, video, error, isLoading, generate, reset } = useVideoGeneration();
   const { videos, loading: libLoading, error: libError, refresh, remove } = useUserVideos();
 
   const [scenes,   setScenes]   = useState<SceneData[]>([]);
@@ -78,7 +78,7 @@ export function Studio() {
           {/* Generating → progress + skeleton */}
           {step !== 'idle' && step !== 'complete' && step !== 'error' ? (
             <div className={styles.mainCard}>
-              <ProgressTracker step={step} error={error} />
+              <ProgressTracker step={step} progress={progress} error={error} />
               <div className={styles.skeletonGrid}>
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className={styles.skeletonCard} style={{ animationDelay: `${i * 0.1}s` }} />
@@ -89,7 +89,7 @@ export function Studio() {
           /* Error */
           ) : step === 'error' ? (
             <div className={styles.mainCard}>
-              <ProgressTracker step={step} error={error} />
+              <ProgressTracker step={step} progress={progress} error={error} />
             </div>
 
           /* Complete — show result + scene tabs */

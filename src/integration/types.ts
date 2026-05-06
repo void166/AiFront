@@ -8,6 +8,14 @@ export type GenerationStep =
   | 'complete'
   | 'error';
 
+export interface GenerationProgress {
+  step: GenerationStep;
+  message: string;
+  percent?: number;
+  sceneIndex?: number;
+  totalScenes?: number;
+}
+
 // ─── Transition types ─────────────────────────────────────────────────────────
 /** High-level style sent by the form (frontend convenience) */
 export type TransitionStyle = 'mixed' | 'fade' | 'wipe' | 'slide' | 'none';

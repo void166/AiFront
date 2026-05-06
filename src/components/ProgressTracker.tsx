@@ -1,8 +1,9 @@
-import type { GenerationStep } from '@integration/types';
+import type { GenerationStep, GenerationProgress } from '@integration/types';
 import styles from './ProgressTracker.module.css';
 
 interface Props {
   step: GenerationStep;
+  progress?: GenerationProgress | null;
   error?: string | null;
 }
 
@@ -26,8 +27,13 @@ function getStepIndex(step: GenerationStep): number {
   return STEP_ORDER.indexOf(step);
 }
 
-export function ProgressTracker({ step, error }: Props) {
+export function ProgressTracker({ step, progress, error }: Props) {
   const currentIdx = getStepIndex(step);
+
+  // Use percent from SSE if available, otherwise derive from step index
+  const barPercent = progress?.percent != null
+    ? progress.percent
+    : Math.max(0, (currentIdx / (STEP_ORDER.length - 1)) * 100);
 
   return (
     <div className={styles.container}>
@@ -35,7 +41,7 @@ export function ProgressTracker({ step, error }: Props) {
       <div className={styles.barTrack}>
         <div
           className={styles.barFill}
-          style={{ width: `${Math.max(0, (currentIdx / (STEP_ORDER.length - 1)) * 100)}%` }}
+          style={{ width: `${barPercent}%` }}
         />
       </div>
 
@@ -45,6 +51,7 @@ export function ProgressTracker({ step, error }: Props) {
           const isDone    = currentIdx > idx;
           const isActive  = currentIdx === idx && step !== 'error';
           const isError   = step === 'error' && idx === currentIdx;
+          const showMsg   = isActive && progress?.message;
 
           return (
             <div
@@ -54,7 +61,12 @@ export function ProgressTracker({ step, error }: Props) {
               <div className={styles.stepIcon}>
                 {isDone ? '✓' : isError ? '✗' : s.icon}
               </div>
-              <span className={styles.stepLabel}>{s.label}</span>
+              <div className={styles.stepInfo}>
+                <span className={styles.stepLabel}>{s.label}</span>
+                {showMsg && (
+                  <span className={styles.stepMessage}>{progress!.message}</span>
+                )}
+              </div>
               {isActive && <span className={styles.pulse} />}
             </div>
           );

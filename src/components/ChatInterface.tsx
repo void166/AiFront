@@ -64,6 +64,11 @@ const TEMPLATES = [
   { label: '🧠 Mind-Bending', topic: '5 facts about the human brain that will blow your mind' },
 ];
 
+const SCRIPT_PROVIDERS: { id: ScriptProvider; label: string; desc: string }[] = [
+  { id: 'anthropic', label: '🤖 Claude',  desc: 'Best quality' },
+  { id: 'groq',      label: '⚡ Groq',    desc: 'Ultra fast' },
+];
+
 const SUBTITLE_CLASSIC: SubtitleStyleOptions = {
   fontSize: 18, bold: true, primaryColor: '#FFE000',
   outlineColor: '#000000', outlineThickness: 4, alignment: 2,
@@ -319,6 +324,21 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
 
             {step === 3 && (
               <div className={`${styles.richCard} ${styles.fadeUp}`}>
+                {/* Script Model */}
+                <p className={styles.sectionLabel}>Script Model</p>
+                <div className={styles.providerRow} style={{ gridTemplateColumns: 'repeat(2,1fr)', marginBottom: 16 }}>
+                  {SCRIPT_PROVIDERS.map(p => (
+                    <button
+                      key={p.id}
+                      className={`${styles.providerBtn} ${form.scriptProvider === p.id ? styles.providerActive : ''}`}
+                      onClick={() => setForm(f => ({ ...f, scriptProvider: p.id }))}
+                    >
+                      <span className={styles.providerName}>{p.label}</span>
+                      <span className={styles.providerDesc}>{p.desc}</span>
+                    </button>
+                  ))}
+                </div>
+
                 {/* TTS Provider */}
                 <p className={styles.sectionLabel}>Voice Engine</p>
                 <div className={styles.providerRow}>
