@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { VideoData, SceneData, SceneTransitionPreset, SubtitleStyleOptions } from '@integration/types';
-import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGenSceneNarration, getVideoStatus } from '@integration/videoApi';
+import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGenSceneNarration, getVideoStatus, uploadAsset } from '@integration/videoApi';
 import { useAuth } from '../context/AuthContext';
 import styles from './EditStudio.module.css';
 
@@ -91,7 +91,15 @@ export function EditStudio() {
   const [regenAudio, setRegenAudio] = useState<number | null>(null);
   const [regenText, setRegenText]   = useState<{ idx: number; what: string } | null>(null);
 
-  const busy = rendering || regenImg !== null || regenAudio !== null || regenText !== null;
+  // Per-scene custom-upload busy states
+  const [uploadImg, setUploadImg]     = useState<number | null>(null);
+  const [uploadAudio, setUploadAudio] = useState<number | null>(null);
+  const [uploadingBgm, setUploadingBgm] = useState(false);
+  const [customBgmName, setCustomBgmName] = useState<string | null>(null);
+
+  const busy = rendering
+    || regenImg !== null   || regenAudio !== null   || regenText !== null
+    || uploadImg !== null  || uploadAudio !== null  || uploadingBgm;
 
   // ── Scene state helper ─────────────────────────────────────────────────────
   const updateScene = (idx: number, patch: Partial<SceneData>) =>
@@ -171,6 +179,45 @@ export function EditStudio() {
     } catch (e: any) { alert(`Image prompt regen failed: ${e.message}`); }
     finally { setRegenText(null); }
   }, [scenes, videoId, videoData, token]);
+
+  // ── Custom uploads (image / audio / bgm) ───────────────────────────────────
+  const handleUploadImage = useCallback(async (idx: number, file: File) => {
+    setUploadImg(idx);
+    try {
+      const sceneId = scenes[idx].id;
+      const { url } = await uploadAsset('image', file, sceneId, token ?? undefined);
+      updateScene(idx, { imageUrl: url });
+    } catch (e: any) { alert(`Image upload failed: ${e.message}`); }
+    finally { setUploadImg(null); }
+  }, [scenes, token]);
+
+  const handleUploadAudio = useCallback(async (idx: number, file: File) => {
+    setUploadAudio(idx);
+    try {
+      const sceneId = scenes[idx].id;
+      const { url } = await uploadAsset('audio', file, sceneId, token ?? undefined);
+      // Probe duration on the client so reassemble has a sensible fallback
+      const dur = await new Promise<number>(resolve => {
+        const a = document.createElement('audio');
+        a.preload = 'metadata';
+        a.onloadedmetadata = () => resolve(isFinite(a.duration) ? a.duration : 0);
+        a.onerror = () => resolve(0);
+        a.src = URL.createObjectURL(file);
+      });
+      updateScene(idx, { audioUrl: url, audioDuration: dur || scenes[idx].audioDuration });
+    } catch (e: any) { alert(`Audio upload failed: ${e.message}`); }
+    finally { setUploadAudio(null); }
+  }, [scenes, token]);
+
+  const handleUploadBgm = useCallback(async (file: File) => {
+    setUploadingBgm(true);
+    try {
+      const { url } = await uploadAsset('bgm', file, undefined, token ?? undefined);
+      setBgmPath(url);
+      setCustomBgmName(file.name);
+    } catch (e: any) { alert(`BGM upload failed: ${e.message}`); }
+    finally { setUploadingBgm(false); }
+  }, [token]);
 
   // ── Re-render ──────────────────────────────────────────────────────────────
   const handleRerender = useCallback(async () => {
@@ -264,10 +311,32 @@ export function EditStudio() {
               <button
                 key={b.id}
                 className={`${styles.ctrlBtn} ${bgmPath === b.id ? styles.ctrlActive : ''}`}
-                onClick={() => setBgmPath(b.id)}
-                disabled={rendering}
+                onClick={() => { setBgmPath(b.id); setCustomBgmName(null); }}
+                disabled={busy}
               >{b.label}</button>
             ))}
+
+            {/* Custom BGM upload */}
+            <label className={`${styles.ctrlBtn} ${customBgmName ? styles.ctrlActive : ''} ${uploadingBgm ? styles.ctrlBtnBusy : ''}`}
+                   style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
+                   title="Өөрийн BGM файл оруулах (.mp3, .wav)">
+              {uploadingBgm
+                ? '⏳ Uploading…'
+                : customBgmName
+                  ? `🎵 ${customBgmName.length > 18 ? customBgmName.slice(0, 16) + '…' : customBgmName}`
+                  : '➕ Custom BGM'}
+              <input
+                type="file"
+                accept="audio/*"
+                style={{ display: 'none' }}
+                disabled={busy}
+                onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f) handleUploadBgm(f);
+                  e.target.value = '';
+                }}
+              />
+            </label>
           </div>
         </div>
       </div>
@@ -304,10 +373,37 @@ export function EditStudio() {
                     onClick={() => handleRegenImage(idx)} disabled={busy} title="Regen image">
                     {isImgBusy ? '⟳' : '🖼️ Regen Image'}
                   </button>
+
+                  {/* Custom image upload */}
+                  <label className={`${styles.miniBtn} ${uploadImg === idx ? styles.miniBusy : ''}`}
+                         style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
+                         title="Өөрийн зураг оруулах (.png, .jpg)">
+                    {uploadImg === idx ? '⟳' : '📤 Upload Image'}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} disabled={busy}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadImage(idx, f);
+                        e.target.value = '';
+                      }} />
+                  </label>
+
                   <button className={`${styles.miniBtn} ${isAudioBusy ? styles.miniBusy : ''}`}
                     onClick={() => handleRegenAudio(idx)} disabled={busy} title="Regen audio">
                     {isAudioBusy ? '⟳' : '🎙️ Regen Audio'}
                   </button>
+
+                  {/* Custom audio upload */}
+                  <label className={`${styles.miniBtn} ${uploadAudio === idx ? styles.miniBusy : ''}`}
+                         style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
+                         title="Өөрийн дуу оруулах (.mp3, .wav)">
+                    {uploadAudio === idx ? '⟳' : '📤 Upload Audio'}
+                    <input type="file" accept="audio/*" style={{ display: 'none' }} disabled={busy}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadAudio(idx, f);
+                        e.target.value = '';
+                      }} />
+                  </label>
                 </div>
               </div>
 

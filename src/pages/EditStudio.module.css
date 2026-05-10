@@ -86,6 +86,7 @@
 }
 .ctrlBtn:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
 .ctrlBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ctrlBtnBusy { color: #f59e0b !important; animation: pulseFade 1s infinite; }
 .ctrlActive {
   background: rgba(0,229,255,0.1) !important;
   border-color: rgba(0,229,255,0.4) !important;

@@ -179,6 +179,37 @@ export async function deleteVideo(videoId: string, token: string): Promise<void>
   await apiFetch(`/api/video/${videoId}`, { method: 'DELETE' }, token);
 }
 
+// ─── Upload custom asset (audio / image / bgm) ──────────────────────────────
+/**
+ * Upload a custom file to Cloudinary via the backend.
+ *  - kind 'audio' / 'image' + sceneId → scene's audioUrl / imageUrl is updated in DB
+ *  - kind 'bgm' → URL is just returned (frontend stores in `bgmPath`)
+ */
+export async function uploadAsset(
+  kind: 'audio' | 'image' | 'bgm',
+  file: File,
+  sceneId?: string,
+  token?: string,
+): Promise<{ url: string }> {
+  // File → base64
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.readAsDataURL(file);
+  });
+
+  const data = await apiFetch(
+    '/api/video/upload-asset',
+    {
+      method: 'POST',
+      body:   JSON.stringify({ kind, base64, mimeType: file.type, sceneId }),
+    },
+    token,
+  );
+  return data as { url: string };
+}
+
 // ─── ReGen scene narration audio (by DB scene id) ────────────────────────────
 /**
  * PATCH /api/video/scene/:id/narration
