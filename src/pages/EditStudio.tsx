@@ -5,39 +5,91 @@ import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGe
 import { useAuth } from '../context/AuthContext';
 import styles from './EditStudio.module.css';
 
-// ─── BGM options ──────────────────────────────────────────────────────────────
+// ─── Inline SVG icons ─────────────────────────────────────────────────────────
+const Icon = {
+  Sparkles: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+    </svg>
+  ),
+  Image: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>
+    </svg>
+  ),
+  Mic: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>
+    </svg>
+  ),
+  Upload: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+    </svg>
+  ),
+  Refresh: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/>
+    </svg>
+  ),
+  Play: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+  ),
+  ArrowLeft: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+  ),
+  Plus: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  ),
+  Music: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+    </svg>
+  ),
+  Edit: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+    </svg>
+  ),
+};
+
+// ─── BGM options (keep one icon per option for visual rhythm) ────────────────
 const BGM_OPTIONS = [
-  { id: '',           label: '🔇 No music' },
-  { id: 'scary1',     label: '👻 Scary' },
-  { id: 'history1',   label: '📜 History 1' },
-  { id: 'history2',   label: '📜 History 2' },
-  { id: 'education1', label: '📚 Education 1' },
-  { id: 'education2', label: '📚 Education 2' },
-  { id: 'stoic1',     label: '🧘 Stoic 1' },
-  { id: 'stoic2',     label: '🧘 Stoic 2' },
-  { id: 'trueCrime1', label: '🔪 True Crime 1' },
-  { id: 'trueCrime2', label: '🔪 True Crime 2' },
+  { id: '',           label: 'No music' },
+  { id: 'scary1',     label: 'Scary' },
+  { id: 'history1',   label: 'History 1' },
+  { id: 'history2',   label: 'History 2' },
+  { id: 'education1', label: 'Education 1' },
+  { id: 'education2', label: 'Education 2' },
+  { id: 'stoic1',     label: 'Stoic 1' },
+  { id: 'stoic2',     label: 'Stoic 2' },
+  { id: 'trueCrime1', label: 'True Crime 1' },
+  { id: 'trueCrime2', label: 'True Crime 2' },
 ];
 
 // ─── Transition options ───────────────────────────────────────────────────────
 const TRANS_OPTIONS: { id: SceneTransitionPreset; label: string }[] = [
-  { id: 'auto',      label: '🎲 Auto' },
-  { id: 'fadeblack', label: '⬛ Fade Black' },
-  { id: 'fade',      label: '🌫 Fade' },
-  { id: 'wiperight', label: '▶ Wipe →' },
-  { id: 'wipeleft',  label: '◀ Wipe ←' },
-  { id: 'hard-cut',  label: '⚡ Cut' },
+  { id: 'auto',      label: 'Auto' },
+  { id: 'fadeblack', label: 'Fade Black' },
+  { id: 'fade',      label: 'Fade' },
+  { id: 'wiperight', label: 'Wipe →' },
+  { id: 'wipeleft',  label: '← Wipe' },
+  { id: 'hard-cut',  label: 'Cut' },
 ];
 
 // ─── Subtitle presets ─────────────────────────────────────────────────────────
 interface SubPreset { id: string; label: string; style?: SubtitleStyleOptions; disabled?: boolean }
 const SUB_PRESETS: SubPreset[] = [
-  { id: 'classic', label: '🔤 Classic',  style: { fontSize: 18, bold: true,  primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 3, alignment: 2 } },
-  { id: 'yellow',  label: '🟡 Yellow',   style: { fontSize: 20, bold: true,  primaryColor: '#FFE000', outlineColor: '#000000', outlineThickness: 4, alignment: 2 } },
-  { id: 'top',     label: '⬆️ Top',      style: { fontSize: 17, bold: true,  primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 3, alignment: 10, marginV: 60 } },
-  { id: 'minimal', label: '🤏 Minimal',  style: { fontSize: 14, bold: false, primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 1, shadowDepth: 0, alignment: 2 } },
-  { id: 'box',     label: '📦 Box',      style: { fontSize: 17, bold: true,  primaryColor: '#FFFFFF', backgroundBox: true, boxColor: '#000000', boxOpacity: 0.65, alignment: 2 } },
-  { id: 'off',     label: '🚫 Off',      disabled: true },
+  { id: 'classic', label: 'Classic',  style: { fontSize: 18, bold: true,  primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 3, alignment: 2 } },
+  { id: 'yellow',  label: 'Yellow',   style: { fontSize: 20, bold: true,  primaryColor: '#FFE000', outlineColor: '#000000', outlineThickness: 4, alignment: 2 } },
+  { id: 'top',     label: 'Top',      style: { fontSize: 17, bold: true,  primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 3, alignment: 10, marginV: 60 } },
+  { id: 'minimal', label: 'Minimal',  style: { fontSize: 14, bold: false, primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 1, shadowDepth: 0, alignment: 2 } },
+  { id: 'box',     label: 'Boxed',    style: { fontSize: 17, bold: true,  primaryColor: '#FFFFFF', backgroundBox: true, boxColor: '#000000', boxOpacity: 0.65, alignment: 2 } },
+  { id: 'off',     label: 'Off',      disabled: true },
 ];
 
 export function EditStudio() {
@@ -65,7 +117,6 @@ export function EditStudio() {
 
   // Fetch from API when navigated without router state (e.g. from VideoLibrary)
   useEffect(() => {
-    // Already have data (from router state or previous fetch) — nothing to do
     if (stateVideo || videoData || !videoId || !token) {
       setFetchLoading(false);
       return;
@@ -84,7 +135,7 @@ export function EditStudio() {
       .finally(() => { if (!cancelled) setFetchLoading(false); });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoId, token]); // intentionally omit videoData/stateVideo — only run once on mount
+  }, [videoId, token]);
 
   // Per-scene regen states
   const [regenImg, setRegenImg]     = useState<number | null>(null);
@@ -101,7 +152,7 @@ export function EditStudio() {
     || regenImg !== null   || regenAudio !== null   || regenText !== null
     || uploadImg !== null  || uploadAudio !== null  || uploadingBgm;
 
-  // ── Scene state helper ─────────────────────────────────────────────────────
+  // ── Scene state helpers ────────────────────────────────────────────────────
   const updateScene = (idx: number, patch: Partial<SceneData>) =>
     setScenes(prev => { const n = [...prev]; n[idx] = { ...prev[idx], ...patch }; return n; });
 
@@ -196,7 +247,6 @@ export function EditStudio() {
     try {
       const sceneId = scenes[idx].id;
       const { url } = await uploadAsset('audio', file, sceneId, token ?? undefined);
-      // Probe duration on the client so reassemble has a sensible fallback
       const dur = await new Promise<number>(resolve => {
         const a = document.createElement('audio');
         a.preload = 'metadata';
@@ -256,12 +306,13 @@ export function EditStudio() {
     );
   }
 
-  // Error or truly missing
   if (fetchError || !videoData) {
     return (
       <div className={styles.noData}>
         <p>{fetchError ?? 'Video not found.'}</p>
-        <button className={styles.backBtn} onClick={() => navigate('/')}>← Back to Studio</button>
+        <button className={styles.backBtn} onClick={() => navigate('/')}>
+          <Icon.ArrowLeft /> Back to Studio
+        </button>
       </div>
     );
   }
@@ -270,9 +321,11 @@ export function EditStudio() {
     <div className={styles.page}>
       {/* ── Page header ── */}
       <div className={styles.pageHeader}>
-        <button className={styles.backBtn} onClick={() => navigate(-1)}>← Back</button>
+        <button className={styles.backBtn} onClick={() => navigate(-1)}>
+          <Icon.ArrowLeft /> Back
+        </button>
         <div className={styles.pageTitle}>
-          <span className={styles.titleIcon}>✏️</span>
+          <span className={styles.titleIcon}><Icon.Edit /></span>
           <div>
             <h1 className={styles.title}>Edit Studio</h1>
             <p className={styles.subtitle}>{videoData.topic}</p>
@@ -283,7 +336,7 @@ export function EditStudio() {
           onClick={handleRerender}
           disabled={busy}
         >
-          {rendering ? <><span className={styles.spin} /> Re-rendering…</> : '▶ Re-render'}
+          {rendering ? <><span className={styles.spin} /> Re-rendering…</> : <><Icon.Play /> Re-render</>}
         </button>
       </div>
 
@@ -318,13 +371,13 @@ export function EditStudio() {
 
             {/* Custom BGM upload */}
             <label className={`${styles.ctrlBtn} ${customBgmName ? styles.ctrlActive : ''} ${uploadingBgm ? styles.ctrlBtnBusy : ''}`}
-                   style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
-                   title="Өөрийн BGM файл оруулах (.mp3, .wav)">
+                   style={{ cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                   title="Upload your own BGM (.mp3, .wav)">
               {uploadingBgm
-                ? '⏳ Uploading…'
+                ? <>… Uploading</>
                 : customBgmName
-                  ? `🎵 ${customBgmName.length > 18 ? customBgmName.slice(0, 16) + '…' : customBgmName}`
-                  : '➕ Custom BGM'}
+                  ? <><Icon.Music /> {customBgmName.length > 14 ? customBgmName.slice(0, 12) + '…' : customBgmName}</>
+                  : <><Icon.Plus /> Custom BGM</>}
               <input
                 type="file"
                 accept="audio/*"
@@ -342,12 +395,12 @@ export function EditStudio() {
       </div>
 
       {/* ── Render error / success ── */}
-      {renderError && <div className={styles.renderError}>⚠ {renderError}</div>}
+      {renderError && <div className={styles.renderError}>{renderError}</div>}
       {renderedUrl && (
         <div className={styles.renderSuccess}>
-          ✅ Re-rendered!
+          <span>Re-rendered successfully</span>
           <a className={styles.watchLink} href={renderedUrl} target="_blank" rel="noreferrer">Watch →</a>
-          <a className={styles.watchLink} href={renderedUrl} download>↓ Download</a>
+          <a className={styles.watchLink} href={renderedUrl} download>Download ↓</a>
         </div>
       )}
 
@@ -370,15 +423,15 @@ export function EditStudio() {
                 </div>
                 <div className={styles.sceneHeaderRight}>
                   <button className={`${styles.miniBtn} ${isImgBusy ? styles.miniBusy : ''}`}
-                    onClick={() => handleRegenImage(idx)} disabled={busy} title="Regen image">
-                    {isImgBusy ? '⟳' : '🖼️ Regen Image'}
+                    onClick={() => handleRegenImage(idx)} disabled={busy} title="Regenerate image">
+                    {isImgBusy ? <Icon.Refresh /> : <><Icon.Refresh /> Image</>}
                   </button>
 
                   {/* Custom image upload */}
                   <label className={`${styles.miniBtn} ${uploadImg === idx ? styles.miniBusy : ''}`}
                          style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
-                         title="Өөрийн зураг оруулах (.png, .jpg)">
-                    {uploadImg === idx ? '⟳' : '📤 Upload Image'}
+                         title="Upload your own image">
+                    {uploadImg === idx ? <Icon.Refresh /> : <><Icon.Upload /> Upload</>}
                     <input type="file" accept="image/*" style={{ display: 'none' }} disabled={busy}
                       onChange={e => {
                         const f = e.target.files?.[0];
@@ -388,15 +441,15 @@ export function EditStudio() {
                   </label>
 
                   <button className={`${styles.miniBtn} ${isAudioBusy ? styles.miniBusy : ''}`}
-                    onClick={() => handleRegenAudio(idx)} disabled={busy} title="Regen audio">
-                    {isAudioBusy ? '⟳' : '🎙️ Regen Audio'}
+                    onClick={() => handleRegenAudio(idx)} disabled={busy} title="Regenerate audio">
+                    {isAudioBusy ? <Icon.Refresh /> : <><Icon.Mic /> Audio</>}
                   </button>
 
                   {/* Custom audio upload */}
                   <label className={`${styles.miniBtn} ${uploadAudio === idx ? styles.miniBusy : ''}`}
                          style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
-                         title="Өөрийн дуу оруулах (.mp3, .wav)">
-                    {uploadAudio === idx ? '⟳' : '📤 Upload Audio'}
+                         title="Upload your own audio">
+                    {uploadAudio === idx ? <Icon.Refresh /> : <><Icon.Upload /> Upload</>}
                     <input type="file" accept="audio/*" style={{ display: 'none' }} disabled={busy}
                       onChange={e => {
                         const f = e.target.files?.[0];
@@ -413,7 +466,7 @@ export function EditStudio() {
                 <div className={styles.sceneLeft}>
                   {scene.imageUrl
                     ? <img src={scene.imageUrl} className={styles.sceneThumb} alt="" loading="lazy" />
-                    : <div className={styles.sceneThumbEmpty}>🎨</div>
+                    : <div className={styles.sceneThumbEmpty}><Icon.Image /></div>
                   }
                   {scene.audioUrl && (
                     <audio className={styles.audio} controls src={scene.audioUrl} preload="none" />
@@ -429,7 +482,7 @@ export function EditStudio() {
                       <button
                         className={`${styles.aiBtn} ${isNarrBusy ? styles.aiBusy : ''}`}
                         onClick={() => handleRegenNarration(idx)} disabled={busy}>
-                        {isNarrBusy ? '⟳ Rewriting…' : '🤖 AI Regen'}
+                        {isNarrBusy ? <><Icon.Refresh /> Rewriting…</> : <><Icon.Sparkles /> AI rewrite</>}
                       </button>
                     </div>
                     <textarea
@@ -449,7 +502,7 @@ export function EditStudio() {
                       <button
                         className={`${styles.aiBtn} ${isPrmptBusy ? styles.aiBusy : ''}`}
                         onClick={() => handleRegenImagePrompt(idx)} disabled={busy}>
-                        {isPrmptBusy ? '⟳ Rewriting…' : '🤖 AI Regen'}
+                        {isPrmptBusy ? <><Icon.Refresh /> Rewriting…</> : <><Icon.Sparkles /> AI rewrite</>}
                       </button>
                     </div>
                     <textarea
@@ -488,13 +541,13 @@ export function EditStudio() {
 
       {/* ── Sticky re-render footer ── */}
       <div className={styles.footer}>
-        {renderError && <span className={styles.footerError}>⚠ {renderError}</span>}
+        {renderError && <span className={styles.footerError}>{renderError}</span>}
         <button
           className={`${styles.rerenderBtn} ${rendering ? styles.rerenderBusy : ''}`}
           onClick={handleRerender}
           disabled={busy}
         >
-          {rendering ? <><span className={styles.spin} /> Re-rendering…</> : '▶ Re-render Video'}
+          {rendering ? <><span className={styles.spin} /> Re-rendering…</> : <><Icon.Play /> Re-render Video</>}
         </button>
       </div>
     </div>
