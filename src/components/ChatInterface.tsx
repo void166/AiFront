@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { GenerateVideoPayload, TtsProvider, ScriptProvider, SubtitleStyleOptions } from '@integration/types';
+import { useAuth } from '../context/AuthContext';
+import { ScriptVariantModal } from './ScriptVariantModal';
 import styles from './ChatInterface.module.css';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -69,12 +71,53 @@ const SCRIPT_PROVIDERS: { id: ScriptProvider; label: string; desc: string }[] = 
   { id: 'groq',      label: '⚡ Groq',    desc: 'Ultra fast' },
 ];
 
-const SUBTITLE_CLASSIC: SubtitleStyleOptions = {
-  fontSize: 18, bold: true, primaryColor: '#FFE000',
-  outlineColor: '#000000', outlineThickness: 4, alignment: 2,
-};
+// ─── Subtitle presets (used in Optional settings) ────────────────────────────
+const SUBTITLE_PRESETS: { id: string; label: string; style: SubtitleStyleOptions | null }[] = [
+  { id: 'classic', label: 'Classic',
+    style: { fontSize: 18, bold: true,  primaryColor: '#FFE000', outlineColor: '#000000', outlineThickness: 4, alignment: 2 } },
+  { id: 'white',   label: 'White',
+    style: { fontSize: 18, bold: true,  primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 3, alignment: 2 } },
+  { id: 'top',     label: 'Top',
+    style: { fontSize: 17, bold: true,  primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 3, alignment: 10, marginV: 60 } },
+  { id: 'minimal', label: 'Minimal',
+    style: { fontSize: 14, bold: false, primaryColor: '#FFFFFF', outlineColor: '#000000', outlineThickness: 1, shadowDepth: 0, alignment: 2 } },
+  { id: 'box',     label: 'Boxed',
+    style: { fontSize: 17, bold: true,  primaryColor: '#FFFFFF', backgroundBox: true, boxColor: '#000000', boxOpacity: 0.65, alignment: 2 } },
+  { id: 'off',     label: 'No subtitles', style: null },
+];
+
+const SUBTITLE_CLASSIC = SUBTITLE_PRESETS[0].style!;
+
+// ─── BGM library — must match backend BGM_LIBRARY keys ───────────────────────
+const BGM_OPTIONS = [
+  { id: '',           label: 'No music' },
+  { id: 'scary1',     label: 'Scary' },
+  { id: 'history1',   label: 'History 1' },
+  { id: 'history2',   label: 'History 2' },
+  { id: 'education1', label: 'Education 1' },
+  { id: 'education2', label: 'Education 2' },
+  { id: 'stoic1',     label: 'Stoic 1' },
+  { id: 'stoic2',     label: 'Stoic 2' },
+  { id: 'trueCrime1', label: 'True Crime 1' },
+  { id: 'trueCrime2', label: 'True Crime 2' },
+];
+
+const TRANSITION_OPTIONS: { id: NonNullable<GenerateVideoPayload['globalTransition']>; label: string }[] = [
+  { id: 'auto',      label: 'Auto (mixed)' },
+  { id: 'fade',      label: 'Fade' },
+  { id: 'fadeblack', label: 'Fade Black' },
+  { id: 'wiperight', label: 'Wipe →' },
+  { id: 'wipeleft',  label: '← Wipe' },
+  { id: 'hard-cut',  label: 'Hard Cut' },
+];
 
 const STEP_LABELS = ['Topic', 'Genre', 'Style', 'Voice', 'Generate'];
+
+// Resolve BGM preview URL based on environment
+const BGM_BASE_URL: string =
+  typeof (import.meta as any).env !== 'undefined'
+    ? ((import.meta as any).env.VITE_API_URL ?? '')
+    : '';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = 0 | 1 | 2 | 3 | 4;
@@ -94,6 +137,11 @@ interface FormState {
   language: string;
   duration: number;
   scriptProvider: ScriptProvider;
+  // ── Optional settings (revealed via the "Advanced" toggle) ──
+  subtitlePreset: string;                                // SUBTITLE_PRESETS.id
+  bgmPath: string;                                       // '' = none
+  bgmVolume: number;                                     // 0–1
+  globalTransition: NonNullable<GenerateVideoPayload['globalTransition']>;
 }
 
 interface Props {
@@ -108,7 +156,9 @@ const mkMsg = (role: 'ai' | 'user', text: string): Msg => ({ role, text, id: ++m
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
+  const { token } = useAuth();
   const [step, setStep]       = useState<Step>(0);
+  const [showVariantModal, setShowVariantModal] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [msgs, setMsgs]       = useState<Msg[]>([
     mkMsg('ai', 'Hey! 👋 What\'s your video topic?'),
@@ -118,11 +168,43 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
     topic: '', genre: 'scary', imageStyle: 'anime',
     ttsProvider: 'gemini', voiceId: 'Kore',
     language: 'mongolian', duration: 60, scriptProvider: 'anthropic',
+    subtitlePreset: 'classic', bgmPath: '', bgmVolume: 0.15, globalTransition: 'auto',
   });
 
   const bottomRef  = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
   const hasReset   = useRef(false);
+
+  // BGM preview audio (single shared player so only one track plays at a time)
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState<string | null>(null);
+  const [showAdvanced,   setShowAdvanced]   = useState(false);
+
+  const playPreview = useCallback((bgmId: string) => {
+    if (!bgmId) return;
+    // Stop currently-playing preview if any
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewPlaying === bgmId) {
+      setPreviewPlaying(null);
+      return;
+    }
+    const audio = new Audio(`${BGM_BASE_URL}/bgm/${bgmId}.mp3`);
+    audio.volume = 0.7;
+    audio.onended = () => setPreviewPlaying(null);
+    audio.onerror = () => setPreviewPlaying(null);
+    previewAudioRef.current = audio;
+    setPreviewPlaying(bgmId);
+    audio.play().catch(() => setPreviewPlaying(null));
+  }, [previewPlaying]);
+
+  // Stop any preview when component unmounts
+  useEffect(() => () => {
+    previewAudioRef.current?.pause();
+    previewAudioRef.current = null;
+  }, []);
 
   // Auto-scroll whenever messages or typing state change
   useEffect(() => {
@@ -183,6 +265,7 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
   };
 
   const handleGenerate = () => {
+    const preset = SUBTITLE_PRESETS.find(p => p.id === form.subtitlePreset);
     onSubmit({
       topic:            form.topic,
       genre:            form.genre,
@@ -193,9 +276,16 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
       ttsProvider:      form.ttsProvider,
       voiceId:          form.voiceId,
       scriptProvider:   form.scriptProvider,
-      subtitleStyle:    SUBTITLE_CLASSIC,
-      disableSubtitles: false,
+      subtitleStyle:    preset?.style ?? SUBTITLE_CLASSIC,
+      disableSubtitles: preset?.style === null,
+      bgmPath:          form.bgmPath || undefined,
+      bgmVolume:        form.bgmVolume,
+      globalTransition: form.globalTransition,
     });
+    // Stop any preview audio when generation begins
+    previewAudioRef.current?.pause();
+    previewAudioRef.current = null;
+    setPreviewPlaying(null);
   };
 
   const handleReset = () => {
@@ -204,10 +294,15 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
     setIsTyping(false);
     setMsgs([mkMsg('ai', 'Hey! 👋 What\'s your video topic?')]);
     setDraft('');
+    setShowAdvanced(false);
+    previewAudioRef.current?.pause();
+    previewAudioRef.current = null;
+    setPreviewPlaying(null);
     setForm({
       topic: '', genre: 'scary', imageStyle: 'anime',
       ttsProvider: 'gemini', voiceId: 'Kore',
       language: 'mongolian', duration: 60, scriptProvider: 'anthropic',
+      subtitlePreset: 'classic', bgmPath: '', bgmVolume: 0.15, globalTransition: 'auto',
     });
     onReset?.();
   };
@@ -398,6 +493,98 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
                   {[20, 60, 120, 180].map(v => <span key={v}>{v}s</span>)}
                 </div>
 
+                {/* ── Advanced (optional) section ── */}
+                <button
+                  type="button"
+                  className={styles.advancedToggle}
+                  onClick={() => setShowAdvanced(s => !s)}
+                >
+                  <span>{showAdvanced ? '▾' : '▸'}</span> Advanced settings (optional)
+                </button>
+
+                {showAdvanced && (
+                  <div className={styles.advancedPanel}>
+                    {/* Subtitle */}
+                    <p className={styles.sectionLabel}>Subtitle Style</p>
+                    <div className={styles.optRow}>
+                      {SUBTITLE_PRESETS.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={`${styles.optBtn} ${form.subtitlePreset === p.id ? styles.optActive : ''}`}
+                          onClick={() => setForm(f => ({ ...f, subtitlePreset: p.id }))}
+                        >{p.label}</button>
+                      ))}
+                    </div>
+
+                    {/* Background Music with preview */}
+                    <p className={styles.sectionLabel} style={{ marginTop: 14 }}>Background Music</p>
+                    <div className={styles.bgmList}>
+                      {BGM_OPTIONS.map(b => {
+                        const isActive  = form.bgmPath === b.id;
+                        const isPlaying = previewPlaying === b.id;
+                        return (
+                          <div key={b.id || 'none'}
+                               className={`${styles.bgmItem} ${isActive ? styles.bgmActive : ''}`}>
+                            <button
+                              type="button"
+                              className={styles.bgmSelectBtn}
+                              onClick={() => setForm(f => ({ ...f, bgmPath: b.id }))}
+                            >
+                              <span className={styles.bgmDot} style={{ opacity: isActive ? 1 : 0.3 }} />
+                              {b.label}
+                            </button>
+                            {b.id && (
+                              <button
+                                type="button"
+                                className={`${styles.bgmPlayBtn} ${isPlaying ? styles.bgmPlaying : ''}`}
+                                onClick={() => playPreview(b.id)}
+                                title={isPlaying ? 'Stop preview' : 'Play preview'}
+                              >
+                                {isPlaying
+                                  ? <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+                                  : <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* BGM volume slider */}
+                    {form.bgmPath && (
+                      <>
+                        <div className={styles.durationRow} style={{ marginTop: 12 }}>
+                          <p className={styles.sectionLabel}>Music Volume</p>
+                          <span className={styles.durationVal}>{Math.round(form.bgmVolume * 100)}%</span>
+                        </div>
+                        <input
+                          type="range" min={0} max={0.6} step={0.05}
+                          value={form.bgmVolume}
+                          onChange={e => setForm(f => ({ ...f, bgmVolume: Number(e.target.value) }))}
+                          className={styles.slider}
+                        />
+                        <div className={styles.sliderTicks}>
+                          <span>0%</span><span>30%</span><span>60%</span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Global Transition */}
+                    <p className={styles.sectionLabel} style={{ marginTop: 14 }}>Scene Transition</p>
+                    <div className={styles.optRow}>
+                      {TRANSITION_OPTIONS.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          className={`${styles.optBtn} ${form.globalTransition === t.id ? styles.optActive : ''}`}
+                          onClick={() => setForm(f => ({ ...f, globalTransition: t.id }))}
+                        >{t.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <button className={styles.confirmBtn} onClick={handleAudioDone}>
                   Continue →
                 </button>
@@ -420,13 +607,23 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
                     </div>
                   ))}
                 </div>
-                <button
-                  className={styles.generateBtn}
-                  onClick={handleGenerate}
-                  disabled={isLoading}
-                >
-                  ✨ Generate Video
-                </button>
+                <div className={styles.generateActions}>
+                  <button
+                    className={styles.generateBtn}
+                    onClick={handleGenerate}
+                    disabled={isLoading}
+                  >
+                    ✨ Generate Video
+                  </button>
+                  <button
+                    className={styles.compareBtn}
+                    onClick={() => setShowVariantModal(true)}
+                    disabled={isLoading}
+                    title="Generate 2 script variants and pick the better one"
+                  >
+                    Compare 2 variants
+                  </button>
+                </div>
               </div>
             )}
           </>
@@ -494,6 +691,29 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
           </div>
         </div>
       )}
+
+      {/* ── Script Variant Modal (A/B comparison before generating) ── */}
+      <ScriptVariantModal
+        open={showVariantModal}
+        topic={form.topic}
+        genre={form.genre}
+        imageStyle={form.imageStyle}
+        language={form.language}
+        duration={form.duration}
+        scriptProvider={form.scriptProvider}
+        token={token ?? undefined}
+        onClose={() => setShowVariantModal(false)}
+        onChoose={(variant) => {
+          setShowVariantModal(false);
+          // Use the variant's title and let the user generate with the same options.
+          // The backend will regenerate the script on its own; for now we just
+          // pass through and rely on the existing generate flow — the user has
+          // already seen the previewed variant they want.
+          handleGenerate();
+          // TODO future: pass `prefScript` to backend so it doesn't re-generate.
+          console.log('User chose variant', variant.id, '—', variant.title);
+        }}
+      />
     </div>
   );
 }

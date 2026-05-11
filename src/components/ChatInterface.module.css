@@ -426,6 +426,111 @@
   margin-bottom: 14px;
 }
 
+/* ─── Advanced (optional) settings panel ─────────────────────────────────── */
+.advancedToggle {
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: var(--text-muted);
+  font-size: 12px; font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: all 0.15s;
+}
+.advancedToggle:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  border-color: rgba(255,255,255,0.12);
+}
+.advancedToggle > span:first-child {
+  color: var(--cyan); font-family: monospace;
+}
+
+.advancedPanel {
+  margin-top: 10px; padding: 14px;
+  border-radius: 11px;
+  background: rgba(255,255,255,0.018);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px);
+}
+
+.optRow {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.optBtn {
+  padding: 6px 12px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-secondary); font-size: 11.5px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.optBtn:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+.optActive {
+  background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(0,229,255,0.12)) !important;
+  border-color: rgba(0,229,255,0.45) !important;
+  color: #C4F1FF !important;
+  box-shadow: 0 0 10px rgba(0,229,255,0.15);
+}
+
+/* BGM list with preview play buttons */
+.bgmList {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+@media (max-width: 420px) { .bgmList { grid-template-columns: 1fr; } }
+
+.bgmItem {
+  display: flex; align-items: stretch;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.025);
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+}
+.bgmItem:hover { background: rgba(255,255,255,0.05); }
+.bgmActive {
+  border-color: rgba(0,229,255,0.5) !important;
+  background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(0,229,255,0.08)) !important;
+}
+
+.bgmSelectBtn {
+  flex: 1;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: transparent; border: none;
+  color: var(--text-secondary); font-size: 12px; font-weight: 500;
+  text-align: left; cursor: pointer;
+}
+.bgmActive .bgmSelectBtn { color: #C4F1FF; }
+
+.bgmDot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--cyan);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(0,229,255,0.6);
+  transition: opacity 0.2s;
+}
+
+.bgmPlayBtn {
+  width: 32px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.25); border: none; border-left: 1px solid rgba(255,255,255,0.05);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bgmPlayBtn:hover { background: rgba(0,229,255,0.15); color: var(--cyan); }
+.bgmPlaying {
+  background: rgba(0,229,255,0.2) !important;
+  color: var(--cyan) !important;
+  animation: bgmPulse 1.4s ease-in-out infinite;
+}
+@keyframes bgmPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.5); } 50% { box-shadow: 0 0 0 5px rgba(0,229,255,0); } }
+
 /* ─── Confirm button ─────────────────────────────────────────────────────── */
 .confirmBtn {
   width: 100%;
@@ -477,6 +582,28 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ─── Generate actions (main + compare variants) ─────────────────────────── */
+.generateActions {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.compareBtn {
+  width: 100%;
+  padding: 9px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.025);
+  color: var(--text-secondary);
+  font-size: 12.5px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.compareBtn:hover:not(:disabled) {
+  background: rgba(124,58,237,0.1);
+  border-color: rgba(124,58,237,0.4);
+  color: #C4B5FD;
+}
+.compareBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ─── Generate button ────────────────────────────────────────────────────── */
 .generateBtn {

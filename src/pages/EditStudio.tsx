@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { VideoData, SceneData, SceneTransitionPreset, SubtitleStyleOptions } from '@integration/types';
 import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGenSceneNarration, getVideoStatus, uploadAsset } from '@integration/videoApi';
 import { useAuth } from '../context/AuthContext';
+import { QualityReport } from '../components/QualityReport';
 import styles from './EditStudio.module.css';
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
@@ -147,6 +148,9 @@ export function EditStudio() {
   const [uploadAudio, setUploadAudio] = useState<number | null>(null);
   const [uploadingBgm, setUploadingBgm] = useState(false);
   const [customBgmName, setCustomBgmName] = useState<string | null>(null);
+
+  // Which scene the QualityReport is currently highlighting (for ring effect)
+  const [highlightScene, setHighlightScene] = useState<number | null>(null);
 
   const busy = rendering
     || regenImg !== null   || regenAudio !== null   || regenText !== null
@@ -404,6 +408,15 @@ export function EditStudio() {
         </div>
       )}
 
+      {/* ── Quality Report ── */}
+      {videoId && (
+        <QualityReport
+          videoId={videoId}
+          token={token ?? undefined}
+          onSceneHover={setHighlightScene}
+        />
+      )}
+
       {/* ── Scene list ── */}
       <div className={styles.sceneList}>
         {scenes.map((scene, idx) => {
@@ -411,9 +424,11 @@ export function EditStudio() {
           const isAudioBusy = regenAudio === idx;
           const isNarrBusy  = regenText?.idx === idx && regenText.what === 'narration';
           const isPrmptBusy = regenText?.idx === idx && regenText.what === 'imagePrompt';
+          const isHighlighted = highlightScene === idx;
 
           return (
-            <div key={idx} className={styles.sceneCard}>
+            <div key={idx}
+                 className={`${styles.sceneCard} ${isHighlighted ? styles.sceneHighlighted : ''}`}>
               {/* ── Scene header ── */}
               <div className={styles.sceneHeader}>
                 <div className={styles.sceneHeaderLeft}>

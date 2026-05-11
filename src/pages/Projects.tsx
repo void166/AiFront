@@ -31,6 +31,11 @@ export function Projects() {
   const [playVideo,      setPlayVideo]      = useState<ProjectVideo | null>(null);
   const [moveError,      setMoveError]      = useState<string | null>(null);
 
+  // ── Drag-and-drop state ──────────────────────────────────────────────────
+  const [draggingVideo,  setDraggingVideo]  = useState<ProjectVideo | null>(null);
+  const [dragOverFolder, setDragOverFolder] = useState<ActiveFolder | null>(null);
+  const [dragPos,        setDragPos]        = useState<{ x: number; y: number } | null>(null);
+
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   // ── Load sidebar folders ──────────────────────────────────────────────────
@@ -121,6 +126,56 @@ export function Projects() {
     }
   };
 
+  // ── Drag-and-drop handlers ───────────────────────────────────────────────
+  const handleDragStart = useCallback((e: React.DragEvent, video: ProjectVideo) => {
+    // Hide the default browser drag preview — we render our own
+    const blankImg = new Image();
+    blankImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(blankImg, 0, 0);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', video.id);
+    setDraggingVideo(video);
+    setDragPos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    // Last drag event has clientX/Y = 0 — ignore that frame
+    if (e.clientX === 0 && e.clientY === 0) return;
+    setDragPos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingVideo(null);
+    setDragOverFolder(null);
+    setDragPos(null);
+  }, []);
+
+  const handleFolderDragOver = useCallback((e: React.DragEvent, folderId: ActiveFolder) => {
+    if (!draggingVideo) return;
+    // Skip self-folder (already there)
+    const currentFolder = draggingVideo.id && activeFolder; // current view
+    if (folderId === currentFolder) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverFolder(folderId);
+  }, [draggingVideo, activeFolder]);
+
+  const handleFolderDragLeave = useCallback(() => {
+    setDragOverFolder(null);
+  }, []);
+
+  const handleFolderDrop = useCallback(async (e: React.DragEvent, folderId: ActiveFolder) => {
+    e.preventDefault();
+    const video = draggingVideo;
+    setDraggingVideo(null);
+    setDragOverFolder(null);
+    setDragPos(null);
+    if (!video) return;
+    // 'all' = unassigned (null), otherwise the project id
+    const targetProjectId = folderId === 'all' ? null : folderId;
+    await handleMove(video.id, targetProjectId);
+  }, [draggingVideo, /* handleMove is stable enough */]);
+
   return (
     <div className={styles.page}>
       {/* Header */}
@@ -141,8 +196,11 @@ export function Projects() {
 
           {/* All Videos */}
           <div
-            className={`${styles.folderItem} ${activeFolder === 'all' ? styles.active : ''}`}
+            className={`${styles.folderItem} ${activeFolder === 'all' ? styles.active : ''} ${dragOverFolder === 'all' ? styles.folderDropOver : ''}`}
             onClick={() => setActiveFolder('all')}
+            onDragOver={e => handleFolderDragOver(e, 'all')}
+            onDragLeave={handleFolderDragLeave}
+            onDrop={e => handleFolderDrop(e, 'all')}
           >
             <span className={styles.folderIcon}>🗂️</span>
             <span className={styles.folderName}>All Videos</span>
@@ -153,8 +211,11 @@ export function Projects() {
           {projects.map(p => (
             <div
               key={p.id}
-              className={`${styles.folderItem} ${activeFolder === p.id ? styles.active : ''}`}
+              className={`${styles.folderItem} ${activeFolder === p.id ? styles.active : ''} ${dragOverFolder === p.id ? styles.folderDropOver : ''}`}
               onClick={() => renamingId !== p.id && setActiveFolder(p.id)}
+              onDragOver={e => handleFolderDragOver(e, p.id)}
+              onDragLeave={handleFolderDragLeave}
+              onDrop={e => handleFolderDrop(e, p.id)}
             >
               <span className={styles.folderIcon}>📂</span>
 
@@ -227,6 +288,10 @@ export function Projects() {
                   onToggleMenu={e => { e.stopPropagation(); setMoveMenuVideo(moveMenuVideo === v.id ? null : v.id); }}
                   onMove={handleMove}
                   onPlay={() => setPlayVideo(v)}
+                  isDragging={draggingVideo?.id === v.id}
+                  onDragStart={e => handleDragStart(e, v)}
+                  onDrag={handleDrag}
+                  onDragEnd={handleDragEnd}
                 />
               ))}
             </div>
@@ -278,6 +343,19 @@ export function Projects() {
           onClose={() => setPlayVideo(null)}
         />
       )}
+
+      {/* ── Floating drag preview (follows the cursor) ── */}
+      {draggingVideo && dragPos && (
+        <div
+          className={styles.dragPreview}
+          style={{ left: dragPos.x, top: dragPos.y }}
+        >
+          {draggingVideo.thumbnail_url
+            ? <img src={draggingVideo.thumbnail_url} alt="" />
+            : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, opacity: 0.4 }}>🎬</div>}
+          <div className={styles.dragPreviewLabel}>{draggingVideo.title}</div>
+        </div>
+      )}
     </div>
   );
 }
@@ -291,9 +369,16 @@ interface CardProps {
   onToggleMenu: (e: React.MouseEvent) => void;
   onMove: (videoId: string, projectId: string | null) => void;
   onPlay: () => void;
+  isDragging: boolean;
+  onDragStart: (e: React.DragEvent) => void;
+  onDrag:      (e: React.DragEvent) => void;
+  onDragEnd:   () => void;
 }
 
-function VideoCard({ video, projects, activeFolder, showMenu, onToggleMenu, onMove, onPlay }: CardProps) {
+function VideoCard({
+  video, projects, activeFolder, showMenu, onToggleMenu, onMove, onPlay,
+  isDragging, onDragStart, onDrag, onDragEnd,
+}: CardProps) {
   const statusClass =
     video.status === 'completed' ? styles.statusCompleted :
     video.status === 'failed'    ? styles.statusFailed    :
@@ -302,7 +387,14 @@ function VideoCard({ video, projects, activeFolder, showMenu, onToggleMenu, onMo
   const dur = video.duration ? `${Math.floor(video.duration / 60)}:${String(Math.round(video.duration % 60)).padStart(2, '0')}` : '';
 
   return (
-    <div className={styles.videoCard} onClick={onPlay}>
+    <div
+      className={`${styles.videoCard} ${isDragging ? styles.videoCardDragging : ''}`}
+      onClick={onPlay}
+      draggable
+      onDragStart={onDragStart}
+      onDrag={onDrag}
+      onDragEnd={onDragEnd}
+    >
       <div className={styles.thumb}>
         {video.thumbnail_url
           ? <img src={video.thumbnail_url} alt={video.title} loading="lazy" />

@@ -80,6 +80,12 @@ export interface GenerateVideoPayload {
   scriptProvider?: ScriptProvider;
   subtitleStyle?: SubtitleStyleOptions;
   disableSubtitles?: boolean;
+  /** Optional: pre-select a BGM track ID (must exist in backend BGM_LIBRARY) */
+  bgmPath?: string;
+  /** Optional: 0–1 volume for the BGM (default 0.15) */
+  bgmVolume?: number;
+  /** Optional: force the same transition on every scene boundary */
+  globalTransition?: 'auto' | 'fade' | 'fadeblack' | 'wiperight' | 'wipeleft' | 'hard-cut';
 }
 
 // ─── Library video (returned from GET /api/video/) ───────────────────────────

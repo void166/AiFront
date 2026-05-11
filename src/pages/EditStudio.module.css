@@ -213,6 +213,20 @@
 }
 .sceneCard:hover::before { opacity: 1; }
 
+/* Highlighted when QualityReport's weak-scene row is hovered */
+.sceneHighlighted {
+  border-color: rgba(239,68,68,0.55) !important;
+  box-shadow:
+    0 0 0 2px rgba(239,68,68,0.18),
+    0 12px 40px rgba(0,0,0,0.4),
+    0 0 36px rgba(239,68,68,0.18) !important;
+  animation: pulseWarn 1.4s ease-in-out infinite;
+}
+@keyframes pulseWarn {
+  0%,100% { box-shadow: 0 0 0 2px rgba(239,68,68,0.18), 0 12px 40px rgba(0,0,0,0.4), 0 0 36px rgba(239,68,68,0.18); }
+  50%     { box-shadow: 0 0 0 3px rgba(239,68,68,0.3),  0 12px 40px rgba(0,0,0,0.4), 0 0 50px rgba(239,68,68,0.3);  }
+}
+
 /* ─── Scene header ───────────────────────────────────────────────────────── */
 .sceneHeader {
   display: flex; align-items: center; justify-content: space-between;
