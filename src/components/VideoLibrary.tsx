@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LibraryVideo } from '@integration/types';
 import { getProjects, moveVideo, type ProjectData } from '@integration/projectApi';
 import { useAuth } from '../context/AuthContext';
 import { VideoPlayerModal } from './VideoPlayerModal';
+import { QualityReportPreview } from './QualityReportPreview';
 import styles from './VideoLibrary.module.css';
 
 interface Props {
@@ -53,11 +54,28 @@ interface CardProps {
   showMoveMenu?: boolean;
   onToggleMoveMenu?: (e: React.MouseEvent) => void;
   onMove?: (videoId: string, projectId: string | null) => void;
+  onHover?: (rect: DOMRect | null, video: LibraryVideo) => void;
 }
 
-function VideoCard({ video, onView, onDelete, projects = [], showMoveMenu, onToggleMoveMenu, onMove }: CardProps) {
+function VideoCard({ video, onView, onDelete, projects = [], showMoveMenu, onToggleMoveMenu, onMove, onHover }: CardProps) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    // Slight delay so quick mouse movements over the grid don't trigger
+    hoverTimer.current = setTimeout(() => {
+      const r = cardRef.current?.getBoundingClientRect() ?? null;
+      onHover?.(r, video);
+    }, 350);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    onHover?.(null, video);
+  };
 
   const accentColor = GENRE_COLORS[video.genre] ?? '#6366f1';
   const thumb       = video.thumbnail_url ?? null;
@@ -72,7 +90,12 @@ function VideoCard({ video, onView, onDelete, projects = [], showMoveMenu, onTog
   };
 
   return (
-    <div className={styles.card}>
+    <div
+      ref={cardRef}
+      className={styles.card}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Thumbnail */}
       <div className={styles.thumb}>
         {thumb ? (
@@ -170,6 +193,7 @@ export function VideoLibrary({ videos, loading, error, onRefresh, onDelete }: Pr
   const [playingVideo, setPlayingVideo] = useState<LibraryVideo | null>(null);
   const [projects,     setProjects]     = useState<ProjectData[]>([]);
   const [moveMenuId,   setMoveMenuId]   = useState<string | null>(null);
+  const [hoverPreview, setHoverPreview] = useState<{ video: LibraryVideo; rect: DOMRect } | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -228,6 +252,7 @@ export function VideoLibrary({ videos, loading, error, onRefresh, onDelete }: Pr
               showMoveMenu={moveMenuId === v.id}
               onToggleMoveMenu={e => { e.stopPropagation(); setMoveMenuId(moveMenuId === v.id ? null : v.id); }}
               onMove={handleMove}
+              onHover={(rect, video) => setHoverPreview(rect ? { video, rect } : null)}
             />
           ))}
         </div>
@@ -239,6 +264,15 @@ export function VideoLibrary({ videos, loading, error, onRefresh, onDelete }: Pr
           videoUrl={playingVideo.final_video_url}
           title={playingVideo.title || playingVideo.topic}
           onClose={() => setPlayingVideo(null)}
+        />
+      )}
+
+      {/* Floating 3D Quality Report preview (shows on card hover) */}
+      {hoverPreview && (
+        <QualityReportPreview
+          videoId={hoverPreview.video.id}
+          token={token ?? undefined}
+          anchorRect={hoverPreview.rect}
         />
       )}
     </div>

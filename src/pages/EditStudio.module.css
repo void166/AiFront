@@ -113,47 +113,58 @@
   50%     { background-position: 200% 50%; }
 }
 
-/* ─── Controls bar (glass card) ──────────────────────────────────────────── */
+/* ─── Controls bar (refined glass tabs) ──────────────────────────────────── */
 .controls {
-  display: flex; flex-direction: column; gap: 14px;
-  padding: 18px 22px;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 10px;
   margin: 18px auto 0;
   width: calc(100% - 32px);
-  border-radius: 18px;
-  background: rgba(255,255,255,0.025);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.02);
   backdrop-filter: blur(24px) saturate(130%);
   -webkit-backdrop-filter: blur(24px) saturate(130%);
-  border: 1px solid rgba(255,255,255,0.07);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 4px 24px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
 }
-.ctrlGroup { display: flex; align-items: flex-start; gap: 14px; }
+.ctrlGroup {
+  display: grid; grid-template-columns: 90px 1fr; align-items: center;
+  gap: 14px; padding: 8px 10px; border-radius: 10px;
+}
+.ctrlGroup + .ctrlGroup { border-top: 1px solid rgba(255,255,255,0.04); padding-top: 12px; margin-top: 2px; }
 .ctrlLabel {
-  font-size: 10px; font-weight: 700; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.1em;
-  padding-top: 7px; min-width: 64px;
+  font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.5);
+  text-transform: uppercase; letter-spacing: 0.14em;
+  padding: 0;
 }
-.ctrlRow { display: flex; flex-wrap: wrap; gap: 7px; }
+.ctrlRow {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.03);
+}
 .ctrlBtn {
-  padding: 6px 13px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
-  color: var(--text-secondary); font-size: 12px; font-weight: 500;
-  cursor: pointer; transition: all 0.18s ease;
-  backdrop-filter: blur(6px);
+  flex: 0 0 auto;
+  padding: 6px 14px; border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255,255,255,0.55); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.16s ease;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
 }
 .ctrlBtn:hover:not(:disabled) {
-  background: rgba(255,255,255,0.07);
-  color: var(--text-primary);
-  border-color: rgba(255,255,255,0.18);
-  transform: translateY(-1px);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
 }
-.ctrlBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ctrlBtn:disabled { opacity: 0.35; cursor: not-allowed; }
 .ctrlBtnBusy { color: #f59e0b !important; animation: pulseFade 1s infinite; }
 .ctrlActive {
-  background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(0,229,255,0.12)) !important;
-  border-color: rgba(0,229,255,0.45) !important;
-  color: #C4F1FF !important;
-  box-shadow: 0 0 14px rgba(0,229,255,0.2);
+  background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(0,229,255,0.3)) !important;
+  color: #fff !important;
+  border-color: rgba(0,229,255,0.55) !important;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+  font-weight: 700;
 }
 
 /* ─── Render feedback ────────────────────────────────────────────────────── */
@@ -212,6 +223,68 @@
     0 0 30px rgba(0,229,255,0.08);
 }
 .sceneCard:hover::before { opacity: 1; }
+
+/* Dragging source — ghost */
+.sceneDragging {
+  opacity: 0.4 !important;
+  transform: scale(0.98) !important;
+  transition: opacity 0.18s, transform 0.18s;
+}
+/* Drop target line — green-accent insertion marker */
+.sceneDropOver {
+  border-color: rgba(16,185,129,0.6) !important;
+  box-shadow:
+    0 0 0 2px rgba(16,185,129,0.25),
+    0 12px 40px rgba(0,0,0,0.4),
+    0 0 30px rgba(16,185,129,0.2) !important;
+}
+
+/* Drag handle (left side of scene header) */
+.dragHandle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  color: rgba(255,255,255,0.3);
+  cursor: grab;
+  border-radius: 6px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.dragHandle:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.06); }
+.dragHandle:active { cursor: grabbing; }
+
+/* Remove scene button (red on hover) */
+.removeBtn {
+  color: rgba(239,68,68,0.6) !important;
+  border-color: rgba(239,68,68,0.2) !important;
+}
+.removeBtn:hover:not(:disabled) {
+  color: #fff !important;
+  background: rgba(239,68,68,0.25) !important;
+  border-color: rgba(239,68,68,0.6) !important;
+}
+
+/* Add new scene button */
+.addSceneBtn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 2px dashed rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.015);
+  color: rgba(255,255,255,0.55);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.addSceneBtn:hover:not(:disabled) {
+  border-color: rgba(0,229,255,0.4);
+  background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(0,229,255,0.04));
+  color: var(--cyan);
+  box-shadow: 0 0 24px rgba(0,229,255,0.08);
+}
+.addSceneBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.addSceneBtn svg { width: 16px; height: 16px; }
 
 /* Highlighted when QualityReport's weak-scene row is hovered */
 .sceneHighlighted {

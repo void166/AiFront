@@ -45,12 +45,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
-body {
+html, body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: var(--bg-void);
   color: var(--text-primary);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: hidden;            /* Prevents fixed-position elements from triggering horizontal scroll */
+  max-width: 100vw;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

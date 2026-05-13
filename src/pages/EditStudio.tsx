@@ -163,6 +163,71 @@ export function EditStudio() {
   const setTrans = (idx: number, val: SceneTransitionPreset) =>
     setTransitions(prev => { const n = [...prev]; n[idx] = val; return n; });
 
+  // ── Add new (empty) scene ──────────────────────────────────────────────────
+  const handleAddScene = useCallback(() => {
+    setScenes(prev => {
+      // Default time slot: pick up after the previous scene
+      const lastTime = prev[prev.length - 1]?.time ?? '0:00-0:05';
+      const lastEnd  = parseInt((lastTime.split('-')[1] || '0:05').split(':')[1] || '5', 10);
+      const newStart = lastEnd;
+      const newEnd   = lastEnd + 5;
+      const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      const newScene = {
+        time:          `${fmt(newStart)}-${fmt(newEnd)}`,
+        scene:         `Scene ${prev.length + 1}`,
+        narration:     '',
+        imagePrompt:   '',
+        imageUrl:      undefined,
+        audioUrl:      undefined,
+        audioDuration: 5,
+      } as unknown as SceneData;
+      return [...prev, newScene];
+    });
+    setTransitions(prev => [...prev, 'auto']);
+  }, []);
+
+  // ── Remove a scene ─────────────────────────────────────────────────────────
+  const handleRemoveScene = useCallback((idx: number) => {
+    if (!confirm(`Scene ${idx + 1} устгах уу?`)) return;
+    setScenes(prev => prev.filter((_, i) => i !== idx));
+    setTransitions(prev => prev.filter((_, i) => i !== idx));
+  }, []);
+
+  // ── Reorder scenes (drag-to-swap) ──────────────────────────────────────────
+  const [dragSceneIdx,    setDragSceneIdx]    = useState<number | null>(null);
+  const [dragOverScene,   setDragOverScene]   = useState<number | null>(null);
+
+  const handleSceneDragStart = useCallback((idx: number) => {
+    setDragSceneIdx(idx);
+  }, []);
+  const handleSceneDragOver = useCallback((e: React.DragEvent, idx: number) => {
+    if (dragSceneIdx === null || dragSceneIdx === idx) return;
+    e.preventDefault();
+    setDragOverScene(idx);
+  }, [dragSceneIdx]);
+  const handleSceneDrop = useCallback((targetIdx: number) => {
+    if (dragSceneIdx === null || dragSceneIdx === targetIdx) {
+      setDragSceneIdx(null); setDragOverScene(null);
+      return;
+    }
+    setScenes(prev => {
+      const copy = [...prev];
+      const [moved] = copy.splice(dragSceneIdx, 1);
+      copy.splice(targetIdx, 0, moved);
+      return copy;
+    });
+    setTransitions(prev => {
+      const copy = [...prev];
+      const [moved] = copy.splice(dragSceneIdx, 1);
+      copy.splice(targetIdx, 0, moved);
+      return copy;
+    });
+    setDragSceneIdx(null); setDragOverScene(null);
+  }, [dragSceneIdx]);
+  const handleSceneDragEnd = useCallback(() => {
+    setDragSceneIdx(null); setDragOverScene(null);
+  }, []);
+
   // ── Image regen ────────────────────────────────────────────────────────────
   const handleRegenImage = useCallback(async (idx: number) => {
     setRegenImg(idx);
@@ -426,12 +491,30 @@ export function EditStudio() {
           const isPrmptBusy = regenText?.idx === idx && regenText.what === 'imagePrompt';
           const isHighlighted = highlightScene === idx;
 
+          const isDragSource = dragSceneIdx === idx;
+          const isDropTarget = dragOverScene === idx;
+
           return (
             <div key={idx}
-                 className={`${styles.sceneCard} ${isHighlighted ? styles.sceneHighlighted : ''}`}>
+                 className={`${styles.sceneCard} ${isHighlighted ? styles.sceneHighlighted : ''} ${isDragSource ? styles.sceneDragging : ''} ${isDropTarget ? styles.sceneDropOver : ''}`}
+                 onDragOver={e => handleSceneDragOver(e, idx)}
+                 onDrop={() => handleSceneDrop(idx)}>
               {/* ── Scene header ── */}
               <div className={styles.sceneHeader}>
                 <div className={styles.sceneHeaderLeft}>
+                  <span
+                    className={styles.dragHandle}
+                    draggable
+                    onDragStart={() => handleSceneDragStart(idx)}
+                    onDragEnd={handleSceneDragEnd}
+                    title="Drag to reorder"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+                      <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                      <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+                    </svg>
+                  </span>
                   <span className={styles.sceneNum}>Scene {idx + 1}</span>
                   <span className={styles.sceneTime}>{scene.time}</span>
                   <span className={styles.sceneTitle}>{scene.scene}</span>
@@ -472,6 +555,18 @@ export function EditStudio() {
                         e.target.value = '';
                       }} />
                   </label>
+
+                  {/* Remove scene */}
+                  <button
+                    className={`${styles.miniBtn} ${styles.removeBtn}`}
+                    onClick={() => handleRemoveScene(idx)}
+                    disabled={busy}
+                    title="Remove scene"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
 
@@ -552,6 +647,16 @@ export function EditStudio() {
             </div>
           );
         })}
+
+        {/* ── Add new scene button ── */}
+        <button
+          type="button"
+          className={styles.addSceneBtn}
+          onClick={handleAddScene}
+          disabled={busy}
+        >
+          <Icon.Plus /> Add new scene
+        </button>
       </div>
 
       {/* ── Sticky re-render footer ── */}
