@@ -187,6 +187,60 @@
   backdrop-filter: blur(10px);
 }
 
+/* ── Cancel button (during generation) ─────────────────────────────────── */
+.cancelRow {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0;
+}
+.cancelBtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.08);
+  color: #FCA5A5;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  backdrop-filter: blur(6px);
+}
+.cancelBtn:hover:not(:disabled) {
+  background: rgba(239,68,68,0.16);
+  border-color: rgba(239,68,68,0.6);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(239,68,68,0.25);
+}
+.cancelBtn:disabled {
+  opacity: 0.6; cursor: wait;
+  background: rgba(245,158,11,0.1);
+  border-color: rgba(245,158,11,0.4);
+  color: #FBBF24;
+}
+
+/* ── Cancel success toast ──────────────────────────────────────────────── */
+.cancelToast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(20,184,166,0.18), rgba(124,58,237,0.16));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(20,184,166,0.45);
+  color: #5EEAD4;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 32px rgba(20,184,166,0.2);
+  z-index: 200;
+  animation: toastIn 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 14px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
 /* ── Skeleton ── */
 .skeletonGrid {
   display: grid;

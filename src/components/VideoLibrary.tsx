@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { LibraryVideo } from '@integration/types';
 import { getProjects, moveVideo, type ProjectData } from '@integration/projectApi';
 import { useAuth } from '../context/AuthContext';
+import { useUserVideos } from '../hooks/useUserVideos';
 import { VideoPlayerModal } from './VideoPlayerModal';
 import { QualityReportPreview } from './QualityReportPreview';
 import styles from './VideoLibrary.module.css';
@@ -190,10 +191,20 @@ function VideoCard({ video, onView, onDelete, projects = [], showMoveMenu, onTog
 
 export function VideoLibrary({ videos, loading, error, onRefresh, onDelete }: Props) {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [playingVideo, setPlayingVideo] = useState<LibraryVideo | null>(null);
   const [projects,     setProjects]     = useState<ProjectData[]>([]);
   const [moveMenuId,   setMoveMenuId]   = useState<string | null>(null);
   const [hoverPreview, setHoverPreview] = useState<{ video: LibraryVideo; rect: DOMRect } | null>(null);
+  const [tab,          setTab]          = useState<'completed' | 'drafts'>('completed');
+
+  // Lazy-load drafts on demand (only when the user opens the Drafts tab)
+  const drafts = useUserVideos('draft');
+  const isDraftsTab = tab === 'drafts';
+  const displayVideos = isDraftsTab ? drafts.videos : videos;
+  const displayLoading = isDraftsTab ? drafts.loading : loading;
+  const displayError   = isDraftsTab ? drafts.error   : error;
+  const displayRefresh = isDraftsTab ? drafts.refresh : onRefresh;
 
   useEffect(() => {
     if (!token) return;
@@ -212,42 +223,75 @@ export function VideoLibrary({ videos, loading, error, onRefresh, onDelete }: Pr
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2 className={styles.heading}>My Videos</h2>
-          {!loading && (
-            <span className={styles.count}>{videos.length} video{videos.length !== 1 ? 's' : ''}</span>
+          {!displayLoading && (
+            <span className={styles.count}>
+              {displayVideos.length} {isDraftsTab ? 'draft' : 'video'}{displayVideos.length !== 1 ? 's' : ''}
+            </span>
           )}
         </div>
-        <button className={styles.refreshBtn} onClick={onRefresh} disabled={loading} title="Refresh">
-          <span className={loading ? styles.spinning : ''}>↻</span>
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Completed / Drafts toggle */}
+          <div className={styles.libTabs}>
+            <button
+              className={`${styles.libTab} ${tab === 'completed' ? styles.libTabActive : ''}`}
+              onClick={() => setTab('completed')}
+            >Completed</button>
+            <button
+              className={`${styles.libTab} ${tab === 'drafts' ? styles.libTabActive : ''}`}
+              onClick={() => setTab('drafts')}
+            >
+              Drafts
+              {drafts.videos.length > 0 && (
+                <span className={styles.libTabBadge}>{drafts.videos.length}</span>
+              )}
+            </button>
+          </div>
+          <button
+            className={styles.refreshBtn}
+            onClick={displayRefresh}
+            disabled={displayLoading}
+            title="Refresh"
+          >
+            <span className={displayLoading ? styles.spinning : ''}>↻</span>
+          </button>
+        </div>
       </div>
 
       {/* Content */}
-      {loading && videos.length === 0 ? (
+      {displayLoading && displayVideos.length === 0 ? (
         <div className={styles.skeletonGrid}>
           {[...Array(6)].map((_, i) => (
             <div key={i} className={styles.skeleton} style={{ animationDelay: `${i * 0.08}s` }} />
           ))}
         </div>
-      ) : error ? (
+      ) : displayError ? (
         <div className={styles.empty}>
           <span className={styles.emptyIcon}>⚠️</span>
-          <p className={styles.emptyText}>{error}</p>
-          <button className={styles.emptyBtn} onClick={onRefresh}>Try again</button>
+          <p className={styles.emptyText}>{displayError}</p>
+          <button className={styles.emptyBtn} onClick={displayRefresh}>Try again</button>
         </div>
-      ) : videos.length === 0 ? (
+      ) : displayVideos.length === 0 ? (
         <div className={styles.empty}>
-          <span className={styles.emptyIcon}>🎬</span>
-          <p className={styles.emptyTitle}>No videos yet</p>
-          <p className={styles.emptyText}>Generate your first video from the form on the left.</p>
+          <span className={styles.emptyIcon}>{isDraftsTab ? '📝' : '🎬'}</span>
+          <p className={styles.emptyTitle}>
+            {isDraftsTab ? 'No drafts' : 'No videos yet'}
+          </p>
+          <p className={styles.emptyText}>
+            {isDraftsTab
+              ? 'Cancelled / unfinished generations land here so you can pick up where you left off.'
+              : 'Generate your first video from the form on the left.'}
+          </p>
         </div>
       ) : (
         <div className={styles.grid}>
-          {videos.map(v => (
+          {displayVideos.map(v => (
             <VideoCard
               key={v.id}
               video={v}
-              onView={setPlayingVideo}
-              onDelete={onDelete}
+              onView={isDraftsTab
+                ? () => navigate(`/studio/${v.id}`)        // drafts: jump straight to Edit Studio
+                : setPlayingVideo}
+              onDelete={isDraftsTab ? drafts.remove : onDelete}
               projects={projects}
               showMoveMenu={moveMenuId === v.id}
               onToggleMoveMenu={e => { e.stopPropagation(); setMoveMenuId(moveMenuId === v.id ? null : v.id); }}

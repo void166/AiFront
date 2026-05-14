@@ -3,6 +3,8 @@ import { getUserVideos, deleteVideo } from '@integration/videoApi';
 import type { LibraryVideo } from '@integration/types';
 import { useAuth } from '../context/AuthContext';
 
+type VideoStatusFilter = 'completed' | 'draft' | 'failed' | 'all';
+
 interface UseUserVideosReturn {
   videos: LibraryVideo[];
   loading: boolean;
@@ -11,7 +13,7 @@ interface UseUserVideosReturn {
   remove: (videoId: string) => Promise<void>;
 }
 
-export function useUserVideos(): UseUserVideosReturn {
+export function useUserVideos(status: VideoStatusFilter = 'completed'): UseUserVideosReturn {
   const { token } = useAuth();
 
   const [videos,  setVideos]  = useState<LibraryVideo[]>([]);
@@ -23,14 +25,14 @@ export function useUserVideos(): UseUserVideosReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await getUserVideos(token);
+      const data = await getUserVideos(token, 1, 20, status);
       setVideos(data.videos ?? []);
     } catch (e: any) {
       setError(e.message ?? 'Failed to load videos');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, status]);
 
   useEffect(() => { refresh(); }, [refresh]);
 

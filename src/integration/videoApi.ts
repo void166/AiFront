@@ -165,9 +165,10 @@ export async function getUserVideos(
   token: string,
   page = 1,
   limit = 20,
+  status: 'completed' | 'draft' | 'failed' | 'all' = 'completed',
 ): Promise<{ videos: LibraryVideo[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
   const data = await apiFetch(
-    `/api/video/?page=${page}&limit=${limit}`,
+    `/api/video/?page=${page}&limit=${limit}&status=${status}`,
     { method: 'GET' },
     token,
   );
@@ -177,6 +178,15 @@ export async function getUserVideos(
 // ─── Delete a video ───────────────────────────────────────────────────────────
 export async function deleteVideo(videoId: string, token: string): Promise<void> {
   await apiFetch(`/api/video/${videoId}`, { method: 'DELETE' }, token);
+}
+
+// ─── Cancel an in-progress generation ────────────────────────────────────────
+/**
+ * Cancels a video generation job. The backend will save whatever it has
+ * produced so far as a draft Video.
+ */
+export async function cancelGeneration(jobId: string, token?: string): Promise<void> {
+  await apiFetch(`/api/video/cancel/${jobId}`, { method: 'POST' }, token);
 }
 
 // ─── Upload custom asset (audio / image / bgm) ──────────────────────────────

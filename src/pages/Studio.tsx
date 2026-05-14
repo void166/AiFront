@@ -11,7 +11,7 @@ import type { SceneData } from '@integration/types';
 import styles from './Studio.module.css';
 
 export function Studio() {
-  const { step, progress, video, error, isLoading, generate, reset } = useVideoGeneration();
+  const { step, progress, video, error, isLoading, isCancelling, cancelMessage, generate, cancel, reset } = useVideoGeneration();
   const { videos, loading: libLoading, error: libError, refresh, remove } = useUserVideos();
 
   const [scenes,   setScenes]   = useState<SceneData[]>([]);
@@ -22,7 +22,12 @@ export function Studio() {
 
   const handleGenerate = async (payload: any) => {
     await generate(payload);
-    refresh();
+    refresh();              // Also pulls in the draft if generation was cancelled
+  };
+
+  const handleCancel = async () => {
+    await cancel();
+    refresh();              // pull the freshly-saved draft into the library
   };
 
   const handleReset = () => {
@@ -75,10 +80,21 @@ export function Studio() {
         ══════════════════════════════════════════ */}
         <main className={styles.main}>
 
-          {/* Generating → progress + skeleton */}
+          {/* Generating → progress + skeleton + cancel */}
           {step !== 'idle' && step !== 'complete' && step !== 'error' ? (
             <div className={styles.mainCard}>
               <ProgressTracker step={step} progress={progress} error={error} />
+              <div className={styles.cancelRow}>
+                <button
+                  className={styles.cancelBtn}
+                  onClick={handleCancel}
+                  disabled={isCancelling}
+                >
+                  {isCancelling
+                    ? <>⏳ Cancelling… saving draft</>
+                    : <>✕ Cancel & save draft</>}
+                </button>
+              </div>
               <div className={styles.skeletonGrid}>
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className={styles.skeletonCard} style={{ animationDelay: `${i * 0.1}s` }} />
@@ -140,6 +156,13 @@ export function Studio() {
           )}
         </main>
       </div>
+
+      {/* ── Cancel success toast ─────────────────────────────────────────── */}
+      {cancelMessage && (
+        <div className={styles.cancelToast}>
+          <span>{cancelMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
