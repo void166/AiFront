@@ -253,46 +253,124 @@
   display: block;
 }
 
-/* ─── Style horizontal scroll ────────────────────────────────────────────── */
+/* ─── Style grid (3 columns, cap card size) ──────────────────────────────── */
 .styleRow {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 6px;            /* space for hover scale to breathe */
+  max-width: 380px;        /* caps total width → each card stays compact */
+  margin: 0 auto;
+  max-height: 1080px;
+  overflow-y: auto;
+  overflow-x: visible;     /* allow hover scale to spill outward */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,229,255,0.25) transparent;
 }
-.styleRow::-webkit-scrollbar { display: none; }
+.styleRow::-webkit-scrollbar { width: 6px; }
+.styleRow::-webkit-scrollbar-thumb {
+  background: rgba(0,229,255,0.2);
+  border-radius: 4px;
+}
+.styleRow::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.4); }
+
+@media (max-width: 460px) {
+  .styleRow { grid-template-columns: repeat(2, 1fr); }
+}
 
 .styleCard {
-  flex-shrink: 0;
-  width: 96px;
-  height: 138px;
-  border-radius: 14px;
-  border: 2px solid transparent;
+  margin-top: 20px;
+  width: 100%;
+  aspect-ratio: 9 / 16;          /* matches the actual portrait preview images */
+  height: 250px;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.06);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.28s cubic-bezier(.34,1.56,.64,1),
+              box-shadow 0.28s ease,
+              border-color 0.28s ease,
+              z-index 0s 0.28s;        /* delay z-index drop so it stays on top during exit */
   display: flex;
   align-items: flex-end;
-  padding: 10px;
+  padding: 8px;
+  background: rgba(255,255,255,0.04);
+  z-index: 1;
+  transform-origin: center;
+}
+.styleCardImg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;             /* card aspect = image aspect (9:16) → no crop */
+  object-position: center;
+  z-index: 0;
+  transition: transform 0.35s ease, filter 0.25s ease;
+  filter: saturate(1.05);
+}
+.styleCard:hover .styleCardImg {
+  transform: scale(1.12);
+  filter: saturate(1.3) brightness(1.1) contrast(1.05);
+}
+/* Bottom gradient → makes the label always legible regardless of image */
+.styleCardGradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.85) 0%,
+    rgba(0,0,0,0.45) 35%,
+    rgba(0,0,0,0.15) 60%,
+    transparent 100%
+  );
+  z-index: 1;
+  transition: opacity 0.2s;
 }
 .styleCard:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+  transform: translateY(-8px) scale(1.18);
+  box-shadow:
+    0 20px 50px rgba(0,0,0,0.65),
+    0 0 48px rgba(124,58,237,0.45),
+    0 0 80px rgba(0,229,255,0.18);
+  border-color: rgba(0,229,255,0.55);
+  z-index: 10;                     /* lifts above siblings */
+  transition: transform 0.32s cubic-bezier(.34,1.56,.64,1),
+              box-shadow 0.32s ease,
+              border-color 0.2s ease,
+              z-index 0s 0s;        /* immediate z-index lift on hover */
 }
 .styleCardActive {
   border-color: var(--cyan) !important;
-  box-shadow: 0 0 20px rgba(0,229,255,0.4), 0 8px 20px rgba(0,0,0,0.3) !important;
-  transform: translateY(-3px) scale(1.04) !important;
+  box-shadow:
+    0 0 0 2px rgba(0,229,255,0.5),
+    0 0 28px rgba(0,229,255,0.55),
+    0 12px 32px rgba(0,0,0,0.5) !important;
+  transform: translateY(-6px) scale(1.08) !important;
+  z-index: 5 !important;
 }
+.styleCardActive::after {
+  content: '✓';
+  position: absolute; top: 8px; right: 8px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7C3AED, #00E5FF);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0,229,255,0.45);
+  animation: pop 0.22s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+
 .styleLabel {
   font-size: 12px;
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9);
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
 }
 
 /* ─── Section labels ─────────────────────────────────────────────────────── */

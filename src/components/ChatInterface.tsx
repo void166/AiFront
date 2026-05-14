@@ -23,13 +23,21 @@ const GENRES = [
   { id: 'education',     label: '📚 Education',      color: '#00051a', accent: '#60a5fa' },
 ];
 
+// ─── Style previews — hosted on Cloudinary ────────────────────────────────────
 const IMAGE_STYLES = [
-  { id: 'anime',         label: 'Anime',        grad: 'linear-gradient(135deg,#7C3AED,#EC4899)' },
-  { id: 'comic',         label: 'Comic',        grad: 'linear-gradient(135deg,#F97316,#EAB308)' },
-  { id: 'creepyComic',   label: 'Creepy Comic', grad: 'linear-gradient(135deg,#1F2937,#991B1B)' },
-  { id: 'modernCartoon', label: 'Cartoon',      grad: 'linear-gradient(135deg,#3B82F6,#06B6D4)' },
-  { id: 'disney',        label: 'Disney',       grad: 'linear-gradient(135deg,#6366F1,#EC4899)' },
-  { id: 'simpsons',      label: 'Simpsons',     grad: 'linear-gradient(135deg,#EAB308,#F97316)' },
+  { id: 'anime',                label: 'Anime',           preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763853/ai-generated-images/fsxy68vi6w3tcf94gkw1.png', grad: 'linear-gradient(135deg,#7C3AED,#EC4899)' },
+  { id: 'cinematic',            label: 'Cinematic',       preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763957/ai-generated-images/hpwwr0b27a2lmxov25y6.png', grad: 'linear-gradient(135deg,#0F172A,#1E40AF)' },
+  { id: 'darkCinematic',        label: 'Dark Cinematic',  preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763999/ai-generated-images/ytjclnatfutbbfiddtjh.png', grad: 'linear-gradient(135deg,#000000,#4C0519)' },
+  { id: 'historicalEpic',       label: 'Historical Epic', preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778764216/ai-generated-images/kiijoxlqgldz2cpykqxq.png', grad: 'linear-gradient(135deg,#92400E,#451A03)' },
+  { id: 'mystery',              label: 'Mystery',         preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778764134/ai-generated-images/oz9zblce9brdjwv5exmg.png', grad: 'linear-gradient(135deg,#1E1B4B,#0F172A)' },
+  { id: 'hyperReal',            label: 'Hyper Real',      preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778764045/ai-generated-images/rvfbly6rhddytpl4bzow.png', grad: 'linear-gradient(135deg,#1F2937,#374151)' },
+  { id: 'comic',                label: 'Comic',           preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763507/ai-generated-images/ykl9qk85tlyulreyd1ku.png', grad: 'linear-gradient(135deg,#F97316,#EAB308)' },
+  { id: 'creepyComic',          label: 'Creepy Comic',    preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763577/ai-generated-images/lzpdovjowrbyr1nt0nrg.png', grad: 'linear-gradient(135deg,#1F2937,#991B1B)' },
+  { id: 'modernCartoon',        label: 'Modern Cartoon',  preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763711/ai-generated-images/lc3luorqzxx0nekaazgx.png', grad: 'linear-gradient(135deg,#3B82F6,#06B6D4)' },
+  { id: 'satiricalFlatCartoon', label: 'Satirical Flat',  preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763896/ai-generated-images/umgsw98oozwliqxyowss.png', grad: 'linear-gradient(135deg,#FBBF24,#F97316)' },
+  { id: 'stylized3DAnimation',  label: '3D Animation',    preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778763801/ai-generated-images/kbfaoxygxr6atb3iivtr.png', grad: 'linear-gradient(135deg,#8B5CF6,#3B82F6)' },
+  { id: 'neonDrama',            label: 'Neon Drama',      preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778764257/ai-generated-images/u3o83dd7bnjnvso3moki.png', grad: 'linear-gradient(135deg,#EC4899,#06B6D4)' },
+  { id: 'viralShock',           label: 'Viral Shock',     preview: 'https://res.cloudinary.com/diputdlo4/image/upload/v1778764091/ai-generated-images/eieg3toh1bj9fulkt4ud.png', grad: 'linear-gradient(135deg,#EF4444,#FBBF24)' },
 ];
 
 const TTS_PROVIDERS: { id: TtsProvider; label: string; desc: string }[] = [
@@ -410,6 +418,14 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
                       style={{ background: s.grad }}
                       onClick={() => handleStyleSelect(s.id, s.label)}
                     >
+                      <img
+                        src={s.preview}
+                        alt={s.label}
+                        className={styles.styleCardImg}
+                        loading="lazy"
+                        onError={e => { (e.currentTarget.style.display = 'none'); }}
+                      />
+                      <span className={styles.styleCardGradient} />
                       <span className={styles.styleLabel}>{s.label}</span>
                     </button>
                   ))}
