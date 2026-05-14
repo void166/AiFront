@@ -163,7 +163,7 @@ export function EditStudio() {
   const setTrans = (idx: number, val: SceneTransitionPreset) =>
     setTransitions(prev => { const n = [...prev]; n[idx] = val; return n; });
 
-  // ── Add new (empty) scene ──────────────────────────────────────────────────
+c  // ── Add new (empty) scene ──────────────────────────────────────────────────
   const handleAddScene = useCallback(() => {
     setScenes(prev => {
       // Default time slot: pick up after the previous scene
