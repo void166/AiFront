@@ -4,6 +4,7 @@ import type { VideoData, SceneData, SceneTransitionPreset, SubtitleStyleOptions 
 import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGenSceneNarration, getVideoStatus, uploadAsset } from '@integration/videoApi';
 import { useAuth } from '../context/AuthContext';
 import { QualityReport } from '../components/QualityReport';
+import type { VideoEvaluation } from '../integration/evaluationApi';
 import styles from './EditStudio.module.css';
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
@@ -151,6 +152,17 @@ export function EditStudio() {
 
   // Which scene the QualityReport is currently highlighting (for ring effect)
   const [highlightScene, setHighlightScene] = useState<number | null>(null);
+
+  // Evaluation data lifted from <QualityReport/> — used to render per-scene
+  // weakness warning chips on each scene card.
+  const [evaluation, setEvaluation] = useState<VideoEvaluation | null>(null);
+  const weaknessMap = (() => {
+    const m = new Map<number, { score: number; weakness: string }>();
+    evaluation?.sceneScores?.forEach(s => {
+      if (s.weakness) m.set(s.sceneIndex, { score: s.score, weakness: s.weakness });
+    });
+    return m;
+  })();
 
   const busy = rendering
     || regenImg !== null   || regenAudio !== null   || regenText !== null
@@ -479,6 +491,7 @@ export function EditStudio() {
           videoId={videoId}
           token={token ?? undefined}
           onSceneHover={setHighlightScene}
+          onEvaluation={setEvaluation}
         />
       )}
 
@@ -572,14 +585,45 @@ export function EditStudio() {
 
               {/* ── Scene body ── */}
               <div className={styles.sceneBody}>
-                {/* Left: image */}
+                {/* Left: image + media status + AI warning */}
                 <div className={styles.sceneLeft}>
                   {scene.imageUrl
                     ? <img src={scene.imageUrl} className={styles.sceneThumb} alt="" loading="lazy" />
                     : <div className={styles.sceneThumbEmpty}><Icon.Image /></div>
                   }
+
+                  {/* Media-readiness badges (image / audio) */}
+                  <div className={styles.mediaStatus}>
+                    <span className={`${styles.statusChip} ${scene.imageUrl ? styles.statusOk : styles.statusMissing}`}
+                          title={scene.imageUrl ? 'Image ready' : 'No image yet'}>
+                      <Icon.Image />
+                    </span>
+                    <span className={`${styles.statusChip} ${scene.audioUrl ? styles.statusOk : styles.statusMissing}`}
+                          title={scene.audioUrl ? 'Audio ready' : 'No audio yet'}>
+                      <Icon.Mic />
+                    </span>
+                  </div>
+
                   {scene.audioUrl && (
                     <audio className={styles.audio} controls src={scene.audioUrl} preload="none" />
+                  )}
+
+                  {/* AI weakness warning for this specific scene */}
+                  {weaknessMap.get(idx) && (
+                    <div className={styles.sceneWeakness}>
+                      <div className={styles.sceneWeaknessHead}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                          <line x1="12" y1="9"  x2="12" y2="13"/>
+                          <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>AI WARNING</span>
+                        <span className={styles.sceneWeaknessScore}>{weaknessMap.get(idx)!.score}/100</span>
+                      </div>
+                      <p className={styles.sceneWeaknessText}>
+                        {weaknessMap.get(idx)!.weakness}
+                      </p>
+                    </div>
                   )}
                 </div>
 

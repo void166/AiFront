@@ -10,6 +10,8 @@ interface Props {
   token?: string;
   /** Optional: callback to highlight a weak scene in the parent */
   onSceneHover?: (sceneIndex: number | null) => void;
+  /** Notify parent whenever evaluation data changes — used to drive per-scene warnings */
+  onEvaluation?: (ev: VideoEvaluation | null) => void;
 }
 
 const AXES = [
@@ -51,7 +53,7 @@ function gradeColor(grade: string | null | undefined): string {
   return '#EF4444';
 }
 
-export function QualityReport({ videoId, token, onSceneHover }: Props) {
+export function QualityReport({ videoId, token, onSceneHover, onEvaluation }: Props) {
   const [evaluation, setEvaluation] = useState<VideoEvaluation | null>(null);
   const [loading,    setLoading]    = useState(true);
   const [running,    setRunning]    = useState(false);
@@ -63,10 +65,11 @@ export function QualityReport({ videoId, token, onSceneHover }: Props) {
     let cancelled = false;
     setLoading(true);
     getEvaluation(videoId, token)
-      .then(data => { if (!cancelled) setEvaluation(data); })
+      .then(data => { if (!cancelled) { setEvaluation(data); onEvaluation?.(data); } })
       .catch(e   => { if (!cancelled) setError(e.message ?? 'Failed to load'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, token]);
 
   const handleRun = useCallback(async () => {
@@ -74,12 +77,13 @@ export function QualityReport({ videoId, token, onSceneHover }: Props) {
     try {
       const result = await evaluateVideo(videoId, token);
       setEvaluation(result);
+      onEvaluation?.(result);
     } catch (e: any) {
       setError(e.message ?? 'Evaluation failed');
     } finally {
       setRunning(false);
     }
-  }, [videoId, token]);
+  }, [videoId, token, onEvaluation]);
 
   const handleRate = useCallback(async (rating: number) => {
     if (!evaluation) return;
@@ -268,24 +272,8 @@ export function QualityReport({ videoId, token, onSceneHover }: Props) {
         </div>
       )}
 
-      {/* Per-scene weakness highlights */}
-      {(evaluation.sceneScores?.filter(s => s.weakness).length ?? 0) > 0 && (
-        <div className={styles.section}>
-          <h4 className={styles.sectionTitle}>Weak scenes</h4>
-          <div className={styles.weakScenes}>
-            {(evaluation.sceneScores ?? []).filter(s => s.weakness).map(s => (
-              <div key={s.sceneIndex}
-                   className={styles.weakScene}
-                   onMouseEnter={() => onSceneHover?.(s.sceneIndex)}
-                   onMouseLeave={() => onSceneHover?.(null)}>
-                <span className={styles.weakSceneTag}>Scene {s.sceneIndex + 1}</span>
-                <span className={styles.weakSceneScore}>{s.score}/100</span>
-                <span className={styles.weakSceneReason}>{s.weakness}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Per-scene weakness warnings are now rendered directly next to each
+          scene in EditStudio — see `weaknessMap` there. */}
 
       {/* User rating + like/dislike */}
       <div className={styles.ratingSection}>

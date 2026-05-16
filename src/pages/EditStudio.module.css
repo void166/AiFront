@@ -303,48 +303,58 @@
 /* ─── Scene header ───────────────────────────────────────────────────────── */
 .sceneHeader {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px;
+  padding: 12px 18px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
-  background: linear-gradient(180deg, rgba(255,255,255,0.025), transparent);
-  flex-wrap: wrap; gap: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+  flex-wrap: wrap; gap: 10px;
 }
-.sceneHeaderLeft { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sceneHeaderLeft { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .sceneNum {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em;
   color: #fff;
   background: linear-gradient(135deg, #7C3AED, #00E5FF);
-  padding: 4px 10px; border-radius: 7px; white-space: nowrap;
+  padding: 4px 10px; border-radius: 6px; white-space: nowrap;
   box-shadow: 0 4px 12px rgba(124,58,237,0.3);
 }
 .sceneTime {
-  font-size: 11px; color: var(--text-muted); white-space: nowrap;
+  font-size: 10.5px; color: rgba(255,255,255,0.4); white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-family: 'SF Mono', ui-monospace, monospace;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.04);
 }
 .sceneTitle {
-  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.75);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.sceneHeaderRight { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+
+/* Action toolbar — grouped & visually separated */
+.sceneHeaderRight {
+  display: flex; gap: 4px; flex-shrink: 0;
+  padding: 3px;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 9px;
+}
 
 .miniBtn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 11px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  color: var(--text-secondary); font-size: 11.5px; font-weight: 500;
-  cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
-  backdrop-filter: blur(8px);
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255,255,255,0.55); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all 0.16s ease; white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 .miniBtn:hover:not(:disabled) {
-  background: rgba(0,229,255,0.08);
+  background: rgba(0,229,255,0.1);
   color: var(--cyan);
-  border-color: rgba(0,229,255,0.35);
-  transform: translateY(-1px);
 }
-.miniBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-.miniBtn.miniBusy { color: #f59e0b; border-color: rgba(245,158,11,0.35); animation: pulseFade 1s infinite; }
-.miniBtn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.miniBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.miniBtn.miniBusy { color: #f59e0b; animation: pulseFade 1s infinite; }
+.miniBtn svg { width: 12px; height: 12px; flex-shrink: 0; }
 
 /* ─── Scene body ─────────────────────────────────────────────────────────── */
 .sceneBody {
@@ -372,6 +382,69 @@
   width: 100%; height: 36px;
   filter: invert(0.92) hue-rotate(180deg);
   border-radius: 8px;
+}
+
+/* ── Per-scene media-readiness chips ─────────────────────────────────────── */
+.mediaStatus {
+  display: flex; gap: 6px;
+  justify-content: center;
+  margin-top: 2px;
+}
+.statusChip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 7px;
+  border: 1px solid;
+  transition: all 0.18s ease;
+}
+.statusChip svg { width: 11px; height: 11px; }
+.statusOk {
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.45);
+  color: #6EE7B7;
+  box-shadow: 0 0 8px rgba(16,185,129,0.18);
+}
+.statusMissing {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.3);
+}
+
+/* ── AI weakness warning chip (inside scene card) ────────────────────────── */
+.sceneWeakness {
+  margin-top: 2px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(239,68,68,0.07), rgba(245,158,11,0.05));
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid rgba(239,68,68,0.7);
+  animation: warnSlide 0.4s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+@keyframes warnSlide {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sceneWeaknessHead {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 9.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: #FCA5A5;
+  margin-bottom: 6px;
+}
+.sceneWeaknessHead svg { flex-shrink: 0; }
+.sceneWeaknessScore {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(239,68,68,0.18);
+  color: #FCA5A5;
+  font-variant-numeric: tabular-nums;
+  font-size: 9.5px;
+}
+.sceneWeaknessText {
+  margin: 0;
+  font-size: 11.5px; line-height: 1.45;
+  color: rgba(255,255,255,0.78);
 }
 .sceneRight { display: flex; flex-direction: column; gap: 16px; }
 
