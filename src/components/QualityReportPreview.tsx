@@ -68,8 +68,8 @@ export function QualityReportPreview({ videoId, token, anchorRect }: Props) {
   // horizontal scroll). Cards in the left half open it to the right.
   const posStyle: React.CSSProperties = (() => {
     if (!anchorRect) return { display: 'none' };
-    const PREVIEW_W = 280;
-    const PREVIEW_H = 360;
+    const PREVIEW_W = 240;
+    const PREVIEW_H = 320;
     const GAP = 16;
     const SAFE = 12;
     const viewportW = window.innerWidth;
