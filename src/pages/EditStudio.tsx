@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { VideoData, SceneData, SceneTransitionPreset, SubtitleStyleOptions } from '@integration/types';
 import { reAssembleVideo, regenSceneText, regenerateScene, reGenSceneImage, reGenSceneNarration, getVideoStatus, uploadAsset } from '@integration/videoApi';
@@ -94,6 +94,39 @@ const SUB_PRESETS: SubPreset[] = [
   { id: 'off',     label: 'Off',      disabled: true },
 ];
 
+const SAMPLE_TEXT = 'Sample subtitle';
+
+/** Small faux-video text sample so users can see how each preset will render */
+function SubtitleSample({ preset }: { preset: SubPreset }) {
+  const s = preset.style;
+  if (!s) return null;
+  // Translate ASS-ish outline thickness into a CSS text-shadow stack
+  const o = s.outlineThickness ?? 2;
+  const oc = s.outlineColor ?? '#000';
+  const outline = [
+    `${ o}px  ${ o}px 0 ${oc}`,
+    `${-o}px  ${ o}px 0 ${oc}`,
+    `${ o}px  ${-o}px 0 ${oc}`,
+    `${-o}px  ${-o}px 0 ${oc}`,
+    `0 0 6px ${oc}`,
+  ].join(', ');
+
+  const style: React.CSSProperties = {
+    color:      s.primaryColor ?? '#fff',
+    fontWeight: s.bold ? 800 : 500,
+    fontSize:   Math.max(10, (s.fontSize ?? 14) * 0.55) + 'px',
+    textShadow: s.shadowDepth === 0 ? 'none' : outline,
+    padding:    s.backgroundBox ? '3px 7px' : '0',
+    background: s.backgroundBox ? (s.boxColor ?? '#000') : 'transparent',
+    borderRadius: s.backgroundBox ? '3px' : 0,
+    opacity:    s.backgroundBox && s.boxOpacity ? Math.max(0.5, s.boxOpacity) : 1,
+    lineHeight: 1.2,
+    letterSpacing: '0.01em',
+    whiteSpace: 'nowrap',
+  };
+  return <span style={style}>{SAMPLE_TEXT}</span>;
+}
+
 export function EditStudio() {
   const { videoId } = useParams<{ videoId: string }>();
   const navigate    = useNavigate();
@@ -149,6 +182,33 @@ export function EditStudio() {
   const [uploadAudio, setUploadAudio] = useState<number | null>(null);
   const [uploadingBgm, setUploadingBgm] = useState(false);
   const [customBgmName, setCustomBgmName] = useState<string | null>(null);
+
+  // ── BGM preview audio (shared player, one track at a time) ──
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState<string | null>(null);
+  const BGM_BASE_URL =
+    typeof (import.meta as any).env !== 'undefined'
+      ? ((import.meta as any).env.VITE_API_URL ?? '')
+      : '';
+  const playBgmPreview = (bgmId: string) => {
+    if (!bgmId) return;
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewPlaying === bgmId) { setPreviewPlaying(null); return; }
+    const audio = new Audio(`${BGM_BASE_URL}/bgm/${bgmId}.mp3`);
+    audio.volume = 0.7;
+    audio.onended = () => setPreviewPlaying(null);
+    audio.onerror = () => setPreviewPlaying(null);
+    previewAudioRef.current = audio;
+    setPreviewPlaying(bgmId);
+    audio.play().catch(() => setPreviewPlaying(null));
+  };
+  useEffect(() => () => {
+    previewAudioRef.current?.pause();
+    previewAudioRef.current = null;
+  }, []);
 
   // Which scene the QualityReport is currently highlighting (for ring effect)
   const [highlightScene, setHighlightScene] = useState<number | null>(null);
@@ -423,42 +483,92 @@ export function EditStudio() {
 
       {/* ── Controls bar ── */}
       <div className={styles.controls}>
-        {/* Subtitle */}
-        <div className={styles.ctrlGroup}>
-          <span className={styles.ctrlLabel}>Subtitle</span>
-          <div className={styles.ctrlRow}>
-            {SUB_PRESETS.map(p => (
-              <button
-                key={p.id}
-                className={`${styles.ctrlBtn} ${subPreset === p.id ? styles.ctrlActive : ''}`}
-                onClick={() => setSubPreset(p.id)}
-                disabled={rendering}
-              >{p.label}</button>
-            ))}
+
+        {/* ── Subtitle picker with live visual previews ── */}
+        <div className={styles.ctrlSection}>
+          <div className={styles.ctrlHeader}>
+            <span className={styles.ctrlLabel}>Subtitle Style</span>
+            <span className={styles.ctrlHelper}>Видеоны хадмал хэрхэн харагдахыг сонгоно</span>
+          </div>
+          <div className={styles.subPresetGrid}>
+            {SUB_PRESETS.map(p => {
+              const active = subPreset === p.id;
+              const isOff = p.disabled;
+              return (
+                <button
+                  key={p.id}
+                  className={`${styles.subPresetCard} ${active ? styles.subPresetActive : ''}`}
+                  onClick={() => setSubPreset(p.id)}
+                  disabled={rendering}
+                  type="button"
+                >
+                  {/* Faux video preview area */}
+                  <div className={`${styles.subPreviewStage} ${p.id === 'top' ? styles.subStageTop : ''}`}>
+                    {isOff
+                      ? <span className={styles.subOffMark}>No subtitles</span>
+                      : <SubtitleSample preset={p} />}
+                  </div>
+                  <div className={styles.subPresetLabel}>{p.label}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
-        {/* BGM */}
-        <div className={styles.ctrlGroup}>
-          <span className={styles.ctrlLabel}>Music</span>
-          <div className={styles.ctrlRow}>
-            {BGM_OPTIONS.map(b => (
-              <button
-                key={b.id}
-                className={`${styles.ctrlBtn} ${bgmPath === b.id ? styles.ctrlActive : ''}`}
-                onClick={() => { setBgmPath(b.id); setCustomBgmName(null); }}
-                disabled={busy}
-              >{b.label}</button>
-            ))}
 
-            {/* Custom BGM upload */}
-            <label className={`${styles.ctrlBtn} ${customBgmName ? styles.ctrlActive : ''} ${uploadingBgm ? styles.ctrlBtnBusy : ''}`}
-                   style={{ cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                   title="Upload your own BGM (.mp3, .wav)">
-              {uploadingBgm
-                ? <>… Uploading</>
-                : customBgmName
-                  ? <><Icon.Music /> {customBgmName.length > 14 ? customBgmName.slice(0, 12) + '…' : customBgmName}</>
-                  : <><Icon.Plus /> Custom BGM</>}
+        {/* ── Background Music with play preview ── */}
+        <div className={styles.ctrlSection}>
+          <div className={styles.ctrlHeader}>
+            <span className={styles.ctrlLabel}>Background Music</span>
+            <span className={styles.ctrlHelper}>Тоглуулах товч дарж сонсох</span>
+          </div>
+          <div className={styles.bgmGrid}>
+            {BGM_OPTIONS.map(b => {
+              const active = bgmPath === b.id && !customBgmName;
+              const playing = previewPlaying === b.id;
+              return (
+                <div
+                  key={b.id || 'none'}
+                  className={`${styles.bgmCard} ${active ? styles.bgmCardActive : ''}`}
+                >
+                  <button
+                    type="button"
+                    className={styles.bgmSelect}
+                    onClick={() => { setBgmPath(b.id); setCustomBgmName(null); }}
+                    disabled={busy}
+                  >
+                    <span className={styles.bgmDot} style={{ opacity: active ? 1 : 0.25 }} />
+                    <span>{b.label}</span>
+                  </button>
+                  {b.id && (
+                    <button
+                      type="button"
+                      className={`${styles.bgmPlay} ${playing ? styles.bgmPlaying : ''}`}
+                      onClick={() => playBgmPreview(b.id)}
+                      disabled={busy}
+                      title={playing ? 'Зогсоох' : 'Сонсох'}
+                    >
+                      {playing
+                        ? <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+                        : <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Custom BGM upload tile */}
+            <label
+              className={`${styles.bgmCard} ${styles.bgmCardUpload} ${customBgmName ? styles.bgmCardActive : ''} ${uploadingBgm ? styles.ctrlBtnBusy : ''}`}
+              style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
+              title="Upload your own BGM (.mp3, .wav)"
+            >
+              <span className={styles.bgmSelect} style={{ pointerEvents: 'none' }}>
+                {uploadingBgm
+                  ? <><Icon.Refresh /> Uploading…</>
+                  : customBgmName
+                    ? <><Icon.Music /> {customBgmName.length > 14 ? customBgmName.slice(0, 12) + '…' : customBgmName}</>
+                    : <><Icon.Plus /> Custom BGM</>}
+              </span>
               <input
                 type="file"
                 accept="audio/*"
