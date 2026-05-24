@@ -1,0 +1,183 @@
+.timeline {
+  background:
+    linear-gradient(180deg,
+      rgba(124, 58, 237, 0.04) 0%,
+      rgba(0, 229, 255, 0.03) 100%),
+    rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--es-border);
+  border-radius: var(--es-r-panel);
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 18px -8px rgba(0, 0, 0, 0.4);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--es-text-dim);
+}
+
+.miniBtn {
+  height: 22px;
+  padding: 0 7px;
+  background: rgba(22, 30, 52, 0.7);
+  border: 1px solid var(--es-border);
+  color: var(--es-text);
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.miniBtn:hover { border-color: var(--es-accent); color: var(--es-accent); }
+
+.playBtn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--es-grad-primary);
+  color: #0a0f1c;
+  border: 0;
+  cursor: pointer;
+  display: grid; place-items: center;
+  box-shadow: var(--es-shadow-accent);
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--es-text);
+}
+.dim { color: var(--es-text-mute); margin-left: 6px; font-weight: 500; }
+.spacer { flex: 1; }
+.activeChip {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--es-accent);
+  background: rgba(0,229,255,.08);
+  border: 1px solid rgba(0,229,255,.2);
+  padding: 3px 8px;
+  border-radius: var(--es-r-chip);
+  font-variant-numeric: tabular-nums;
+}
+
+.ruler {
+  position: relative;
+  height: 14px;
+  border-bottom: 1px dashed var(--es-border);
+}
+.tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--es-text-mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  top: 0;
+}
+
+.trackOuter { padding-top: 4px; }
+.track {
+  display: flex;
+  height: 40px;
+  gap: 2px;
+  position: relative;
+  border-radius: var(--es-r-sm);
+  background: rgba(10, 15, 28, 0.4);
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+
+.block {
+  position: relative;
+  height: 100%;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: transform .12s ease, outline-color .12s ease;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  min-width: 28px;
+  overflow: hidden;
+}
+.block:hover, .blockHover { transform: translateY(-1px); }
+.blockActive {
+  outline-color: var(--es-accent);
+  box-shadow: 0 0 0 1px var(--es-accent), 0 4px 14px rgba(0,229,255,.35);
+}
+.blockStart {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(10,15,28,.85);
+  font-variant-numeric: tabular-nums;
+}
+.blockLabel {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: rgba(10,15,28,.95);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.warnBadge {
+  position: absolute;
+  top: 3px; right: 4px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--es-err);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid; place-items: center;
+  box-shadow: 0 0 6px rgba(248,113,113,0.7);
+}
+
+/* Boundary tick — thin vertical line where each scene starts */
+.boundary {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Playhead */
+.cursor {
+  position: absolute;
+  top: -4px; bottom: -4px;
+  pointer-events: none;
+  z-index: 5;
+}
+.cursorHead {
+  position: absolute;
+  top: -2px; left: -6px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--es-accent);
+  box-shadow: 0 0 8px var(--es-accent);
+}
+.cursorLine {
+  position: absolute;
+  top: 8px; bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(180deg, var(--es-accent), var(--es-accent-2));
+  border-radius: 999px;
+}

@@ -1,0 +1,249 @@
+.form {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.form::-webkit-scrollbar { width: 5px; }
+.form::-webkit-scrollbar-thumb { background: var(--es-border-hi); border-radius: 999px; }
+
+.formEmpty {
+  padding: 30px;
+  text-align: center;
+  color: var(--es-text-mute);
+  font-size: 12px;
+}
+
+.section { display: flex; flex-direction: column; gap: 10px; }
+.fieldHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--es-text-dim);
+}
+
+.actRow { display: flex; gap: 5px; }
+.iconBtn {
+  width: 28px; height: 28px;
+  display: grid;
+  place-items: center;
+  background: rgba(0,229,255,.06);
+  border: 1px solid rgba(0,229,255,.16);
+  color: var(--es-accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .12s ease;
+}
+.iconBtn:hover:not(:disabled) {
+  background: rgba(0,229,255,.18);
+  border-color: rgba(0,229,255,.45);
+  transform: translateY(-1px);
+}
+.iconBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.iconBusy { background: rgba(0,229,255,.18); }
+
+.textarea {
+  width: 100%;
+  background: rgba(10, 15, 28, 0.6);
+  border: 1px solid var(--es-border);
+  border-radius: var(--es-r-sm);
+  padding: 9px 11px;
+  color: var(--es-text);
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color .15s ease;
+  min-height: 60px;
+}
+.textareaLg {
+  font-size: 13px;
+  min-height: 110px;
+}
+.textarea:focus { border-color: var(--es-accent); }
+.textarea:disabled { opacity: 0.6; }
+
+/* ── Collapsible rows ── */
+.collapse {
+  border: 1px solid var(--es-border);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg,
+      rgba(124, 58, 237, 0.03),
+      rgba(0, 229, 255, 0.02)),
+    rgba(10, 15, 28, 0.35);
+  overflow: hidden;
+  transition: border-color .2s ease;
+}
+.collapse:hover { border-color: var(--es-border-hi); }
+.collapseHead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--es-text);
+}
+.collapseHead:hover { background: rgba(22, 30, 52, 0.5); }
+.collapseTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--es-text-mute);
+}
+.collapsePreview {
+  flex: 1;
+  text-align: left;
+  font-size: 12px;
+  color: var(--es-text);
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.collapseChev {
+  color: var(--es-text-mute);
+  transition: transform .2s ease;
+}
+.collapseBody {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--es-border);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+/* ── Pills (transition) ── */
+.pillRow { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill {
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(22, 30, 52, 0.6);
+  border: 1px solid var(--es-border);
+  color: var(--es-text-dim);
+  border-radius: var(--es-r-sm);
+  cursor: pointer;
+  transition: all .12s ease;
+}
+.pill:hover:not(:disabled) { color: var(--es-text); border-color: var(--es-border-hi); background: var(--es-card-hi); }
+.pillActive {
+  background: rgba(0,229,255,.16);
+  border-color: var(--es-accent);
+  color: var(--es-accent);
+  box-shadow: 0 0 0 2px rgba(0,229,255,.10);
+}
+
+/* ── Subtitle preview grid (bigger cards) ── */
+.subGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.subCard {
+  background: rgba(22, 30, 52, 0.5);
+  border: 1.5px solid var(--es-border);
+  border-radius: var(--es-r-sm);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all .12s ease;
+}
+.subCard:hover { border-color: var(--es-border-hi); transform: translateY(-1px); }
+.subCardActive {
+  border-color: var(--es-accent);
+  box-shadow: 0 0 0 3px rgba(0,229,255,.14);
+}
+.subStage {
+  height: 60px;
+  background: linear-gradient(180deg, #1c2746, #0f172a);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+.subOff { color: var(--es-text-mute); font-size: 10px; font-weight: 600; }
+.subLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--es-text-dim);
+  text-align: center;
+  padding: 5px;
+  background: rgba(10, 15, 28, 0.5);
+}
+
+/* ── BGM grid (bigger pills) ── */
+.bgmGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+.bgmCard {
+  display: flex;
+  align-items: center;
+  padding: 7px 10px;
+  background: rgba(22,30,52,0.5);
+  border: 1.5px solid var(--es-border);
+  border-radius: var(--es-r-sm);
+  gap: 6px;
+  cursor: pointer;
+  transition: all .12s ease;
+  min-height: 32px;
+}
+.bgmCard:hover { border-color: var(--es-border-hi); }
+.bgmActive { border-color: var(--es-accent); background: rgba(0,229,255,.08); box-shadow: 0 0 0 2px rgba(0,229,255,.10); }
+.bgmSelect {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  color: var(--es-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bgmDot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--es-accent);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--es-accent);
+}
+.bgmPlay {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(0,229,255,.12);
+  border: 1px solid rgba(0,229,255,.22);
+  color: var(--es-accent);
+  display: grid; place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.bgmPlay:hover:not(:disabled) { background: var(--es-accent); color: #0a0f1c; }
+.bgmPlaying { background: var(--es-accent); color: #0a0f1c; }
+.bgmUpload { border-style: dashed; }
+
+.miniSpin {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: es-spin 0.7s linear infinite;
+}

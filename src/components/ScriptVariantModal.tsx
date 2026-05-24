@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { generateScriptVariants, type ScriptVariant } from '../integration/evaluationApi';
 import styles from './ScriptVariantModal.module.css';
 
@@ -46,7 +47,7 @@ export function ScriptVariantModal({
     if (chosen) onChoose(chosen);
   };
 
-  return (
+  const content = (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <header className={styles.header}>
@@ -84,15 +85,12 @@ export function ScriptVariantModal({
                   </div>
                   <h3 className={styles.variantTitle}>{v.title}</h3>
                   <div className={styles.sceneList}>
-                    {v.scenes.slice(0, 4).map((s, i) => (
+                    {v.scenes.map((s, i) => (
                       <div key={i} className={styles.sceneRow}>
                         <span className={styles.sceneTime}>{s.time}</span>
                         <span className={styles.sceneText}>{s.narration}</span>
                       </div>
                     ))}
-                    {v.scenes.length > 4 && (
-                      <div className={styles.sceneMore}>+ {v.scenes.length - 4} more scenes…</div>
-                    )}
                   </div>
                 </button>
               ))}
@@ -113,4 +111,6 @@ export function ScriptVariantModal({
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }

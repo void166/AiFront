@@ -1,0 +1,78 @@
+/* ===== EditStudio design tokens ============================================
+   Adopted into the existing CSS-Modules / global stylesheet system.
+   Imported once from pages/EditStudio.module.css via :global() so the
+   :root variables are available throughout the page.
+   ========================================================================== */
+
+:root {
+  /* Surfaces */
+  --es-bg-0:       #0a0f1c;
+  --es-bg-1:       #0f172a;
+  --es-card:       rgba(22, 30, 52, 0.72);
+  --es-card-hi:    #1c2746;
+  --es-border:     rgba(148, 163, 184, 0.12);
+  --es-border-hi:  rgba(148, 163, 184, 0.22);
+
+  /* Text */
+  --es-text:       #e7ecf5;
+  --es-text-dim:   #94a3b8;
+  --es-text-mute:  #64748b;
+
+  /* Accents */
+  --es-accent:     #00e5ff;
+  --es-accent-2:   #7c3aed;
+  --es-ok:         #10b981;
+  --es-warn:       #fbbf24;
+  --es-err:        #f87171;
+
+  /* Gradients */
+  --es-grad-primary:  linear-gradient(135deg, #00e5ff 0%, #7c3aed 100%);
+  --es-grad-soft:     linear-gradient(135deg, rgba(0,229,255,.16), rgba(124,58,237,.16));
+
+  /* Page background — radial blobs + linear base */
+  --es-page-bg:
+    radial-gradient(1200px 700px at 15% -10%, rgba(124,58,237,.18), transparent 60%),
+    radial-gradient(900px 600px at 110% 110%, rgba(0,229,255,.12), transparent 55%),
+    linear-gradient(180deg, #0a0f1c 0%, #0d1426 100%);
+
+  /* Type scale */
+  --es-fs-section: 10.5px;
+  --es-fs-body:    12.5px;
+  --es-fs-title:   13.5px;
+
+  /* Radii */
+  --es-r-chip:    6px;
+  --es-r-sm:      8px;
+  --es-r-card:    12px;
+  --es-r-panel:   14px;
+  --es-r-preview: 18px;
+
+  /* Spacing */
+  --es-sp-1:  8px;
+  --es-sp-2: 12px;
+  --es-sp-3: 16px;
+  --es-sp-4: 24px;
+
+  /* Shadows */
+  --es-shadow-card:   0 10px 30px rgba(0, 0, 0, 0.35);
+  --es-shadow-accent: 0 6px 24px rgba(0, 229, 255, 0.25),
+                      0 6px 24px rgba(124, 58, 237, 0.25);
+}
+
+/* ----- Reusable animations ----- */
+@keyframes es-warn-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.0); }
+  50%     { box-shadow: 0 0 0 6px rgba(248, 113, 113, 0.18); }
+}
+@keyframes es-spin { to { transform: rotate(360deg); } }
+@keyframes es-toast-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes es-toast-out {
+  to { transform: translateX(120%); opacity: 0; }
+}
+@keyframes es-blur-pulse {
+  0%,100% { opacity: 0.85; }
+  50%     { opacity: 1; }
+}
