@@ -220,6 +220,44 @@ export async function uploadAsset(
   return data as { url: string };
 }
 
+// ─── PDF → Video topic summarisation ────────────────────────────────────────
+export interface PdfSummaryResponse {
+  topic:             string;
+  title:             string;
+  suggestedGenre:    string;
+  suggestedLanguage: 'mongolian' | 'english';
+  pages:             number;
+  rawChars:          number;
+  fileName:          string;
+}
+
+/**
+ * Upload a PDF and get back a viral-ready topic + suggested settings.
+ *
+ * Uses multipart/form-data so we can't reuse the JSON-only `apiFetch` helper.
+ */
+export async function summarisePdf(
+  file: File,
+  token?: string,
+): Promise<PdfSummaryResponse> {
+  const fd = new FormData();
+  fd.append('pdf', file);
+
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/video/pdf/summarise`, {
+    method: 'POST',
+    headers,           // NOTE: don't set Content-Type — fetch sets the boundary
+    body:   fd,
+  });
+  const data = await res.json() as { success?: boolean; error?: string; data?: PdfSummaryResponse };
+  if (!res.ok) {
+    throw new Error(data.error ?? `HTTP ${res.status}`);
+  }
+  return data.data!;
+}
+
 // ─── ReGen scene narration audio (by DB scene id) ────────────────────────────
 /**
  * PATCH /api/video/scene/:id/narration

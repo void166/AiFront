@@ -833,9 +833,311 @@
   cursor: not-allowed;
 }
 
+/* ─── Quick Generate banner ─────────────────────────────────────────────── */
+.quickBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.06), rgba(0,229,255,0.04));
+  border: 1px solid rgba(124,58,237,0.18);
+  border-radius: 14px;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.quickBannerOn {
+  background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(0,229,255,0.12));
+  border-color: rgba(0,229,255,0.55);
+  box-shadow: 0 0 18px rgba(0,229,255,0.20), inset 0 0 0 1px rgba(0,229,255,0.18);
+}
+.quickBannerText {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.quickBannerIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(0,229,255,0.5));
+}
+.quickBannerTitle {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #C4B5FD, #00E5FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 2px;
+}
+.quickBannerSub {
+  font-size: 11.5px;
+  color: var(--text-muted, rgba(255,255,255,0.55));
+  line-height: 1.35;
+}
+.quickSwitch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.quickSwitchKnob {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.22s cubic-bezier(.5,.2,.3,1.2), background 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.quickSwitchOn {
+  background: linear-gradient(135deg, #7C3AED, #00E5FF);
+  border-color: rgba(0,229,255,0.6);
+  box-shadow: 0 0 10px rgba(0,229,255,0.45);
+}
+.quickSwitchOn .quickSwitchKnob {
+  left: 22px;
+  background: #fff;
+}
+
+.sendBtnQuick {
+  background: linear-gradient(135deg, #00E5FF, #7C3AED) !important;
+  box-shadow: 0 0 18px rgba(0,229,255,0.55) !important;
+}
+.sendBtnQuick:hover:not(:disabled) {
+  box-shadow: 0 0 26px rgba(0,229,255,0.75) !important;
+}
+
+/* ─── Mode Tabs (Topic / PDF Upload) ─────────────────────────────────────── */
+.modeTabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.modeTab {
+  flex: 1;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  letter-spacing: -0.1px;
+}
+.modeTab:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.04);
+}
+.modeTabActive {
+  background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  color: #fff !important;
+  box-shadow: 0 0 14px rgba(124,58,237,0.45);
+}
+
+/* ─── PDF Upload Panel ───────────────────────────────────────────────────── */
+.pdfPanel {
+  margin-bottom: 10px;
+}
+
+.pdfDropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 18px;
+  border: 2px dashed rgba(124,58,237,0.35);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.04), rgba(0,229,255,0.03));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.pdfDropzone:hover {
+  border-color: rgba(124,58,237,0.7);
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(0,229,255,0.06));
+  box-shadow: 0 0 24px rgba(124,58,237,0.15) inset;
+}
+.pdfDropzoneHasFile {
+  border-color: rgba(16,185,129,0.6);
+  background: linear-gradient(135deg, rgba(16,185,129,0.06), rgba(0,229,255,0.04));
+}
+.pdfDropIcon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+.pdfDropTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+  letter-spacing: -0.2px;
+  word-break: break-word;
+}
+.pdfDropSub {
+  font-size: 11.5px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.pdfError {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #fca5a5;
+}
+
+.pdfAnalyseBtn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7C3AED, #00E5FF);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: -0.1px;
+  transition: all 0.18s ease;
+  box-shadow: 0 0 18px rgba(124,58,237,0.4);
+}
+.pdfAnalyseBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(124,58,237,0.65);
+}
+.pdfAnalyseBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.pdfSpinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pdfSpin 0.8s linear infinite;
+}
+@keyframes pdfSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── PDF Summary Card ───────────────────────────────────────────────────── */
+.pdfSummary {
+  padding: 14px;
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.07), rgba(0,229,255,0.04));
+  box-shadow: 0 0 20px rgba(124,58,237,0.1) inset;
+}
+.pdfSummaryHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.pdfSummaryBadge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: rgba(124,58,237,0.2);
+  border: 1px solid rgba(124,58,237,0.4);
+  color: #c4b5fd;
+  letter-spacing: 0.3px;
+}
+.pdfResetBtn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pdfResetBtn:hover {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.4);
+  color: #fca5a5;
+}
+.pdfSummaryTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+}
+.pdfSummaryTopic {
+  font-size: 12.5px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.pdfSummaryMeta {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.pdfSummaryMetaItem {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-secondary, #94a3b8);
+}
+.pdfUseBtn {
+  width: 100%;
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 0 16px rgba(16,185,129,0.35);
+  letter-spacing: -0.1px;
+}
+.pdfUseBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 24px rgba(16,185,129,0.55);
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .genreGrid     { grid-template-columns: repeat(2, 1fr); }
   .providerRow   { grid-template-columns: 1fr 1fr; }
   .voiceGrid     { grid-template-columns: 1fr; }
+  .quickBanner   { padding: 9px 11px; }
+  .quickBannerIcon { font-size: 18px; }
+  .quickBannerTitle { font-size: 12px; }
+  .quickBannerSub { font-size: 11px; }
 }

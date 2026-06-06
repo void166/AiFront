@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { NotificationBell } from './NotificationBell';
 import styles from './Header.module.css';
 
 export function Header() {
@@ -24,6 +25,7 @@ export function Header() {
 
         {isAuthed ? (
           <>
+            <NotificationBell />
             <span className={styles.email}>{user?.email}</span>
             <button
               className={styles.authBtn}

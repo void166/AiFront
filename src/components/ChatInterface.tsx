@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import type { GenerateVideoPayload, TtsProvider, ScriptProvider, SubtitleStyleOptions } from '@integration/types';
 import { useAuth } from '../context/AuthContext';
 import { ScriptVariantModal } from './ScriptVariantModal';
+import { summarisePdf } from '../integration/videoApi';
 import styles from './ChatInterface.module.css';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -73,6 +74,56 @@ const TEMPLATES = [
   { label: '🔪 True Crime', topic: 'The shocking disappearance of a small-town secret' },
   { label: '🧠 Mind-Bending', topic: '5 facts about the human brain that will blow your mind' },
 ];
+
+/* ─── Auto-detect helper ────────────────────────────────────────────────────
+   In Quick-Generate mode the user only types a topic. We then derive every
+   other setting (genre, style, voice, language) from keywords in the topic.
+   Pure client-side heuristic — fast, no extra API call.                    */
+function autoDetectFromTopic(topic: string): {
+  genre: string; imageStyle: string; language: string;
+  ttsProvider: TtsProvider; voiceId: string; bgmPath: string;
+} {
+  const t = topic.toLowerCase();
+  let genre = 'education';
+  let imageStyle = 'cinematic';
+  let bgmPath = '';
+
+  if      (/(scary|horror|ghost|spirit|haunt|terror|cursed)/.test(t))       { genre = 'scary';         imageStyle = 'darkCinematic';        bgmPath = 'scary1'; }
+  else if (/(crime|murder|killer|case|disappear|investig)/.test(t))         { genre = 'trueCrime';     imageStyle = 'mystery';              bgmPath = 'trueCrime1'; }
+  else if (/(conspiracy|secret|cover.?up|hidden truth|illuminati)/.test(t)) { genre = 'conspiracy';    imageStyle = 'neonDrama';            bgmPath = 'trueCrime2'; }
+  else if (/(history|ancient|war|empire|battle|rome|egypt)/.test(t))        { genre = 'darkHistory';   imageStyle = 'historicalEpic';       bgmPath = 'history1'; }
+  else if (/(brain|mind|psycholog|mental|cognit|consciou)/.test(t))         { genre = 'psychology';    imageStyle = 'cinematic';            bgmPath = 'education1'; }
+  else if (/(myth|legend|gods?|odin|zeus|loki|thor|hercul)/.test(t))        { genre = 'mythology';     imageStyle = 'historicalEpic';       bgmPath = 'history2'; }
+  else if (/(stoic|aurelius|seneca|philosoph|wisdom|meditat)/.test(t))      { genre = 'stoic';         imageStyle = 'cinematic';            bgmPath = 'stoic1'; }
+  else if (/(myth.?bust|debunk|truth about|actually)/.test(t))              { genre = 'mythBusting';   imageStyle = 'comic'; }
+  else if (/(survival|wild|jungle|extreme|surviv)/.test(t))                 { genre = 'survival';      imageStyle = 'hyperReal'; }
+  else if (/(future|ai\b|robot|space|tech|cyber|quantum)/.test(t))          { genre = 'futuristic';    imageStyle = 'stylized3DAnimation'; }
+  else if (/(biograph|life of|story of|the man who|career of)/.test(t))     { genre = 'biography';     imageStyle = 'historicalEpic'; }
+  else if (/(shocking|wow|amazing|surprising|insane|crazy)/.test(t))        { genre = 'shockingFacts'; imageStyle = 'viralShock'; }
+  else if (/(business|money|entrepreneur|startup|wealth|profit)/.test(t))   { genre = 'business';      imageStyle = 'modernCartoon'; }
+  else if (/(scien|physics|chemistry|biology|atom|molecul|galaxy)/.test(t)) { genre = 'sciExplained';  imageStyle = 'cinematic';            bgmPath = 'education2'; }
+  else if (/(learn|explain|how to|why does|tutorial)/.test(t))              { genre = 'education';     imageStyle = 'modernCartoon';        bgmPath = 'education1'; }
+
+  // Language: Cyrillic → Mongolian, else English.
+  const language = /[а-яА-ЯөүӨҮёЁ]/.test(topic) ? 'mongolian' : 'english';
+
+  // Voice pick: Mongolian → Chimege; scary/crime/conspiracy → ElevenLabs eerie;
+  // otherwise Gemini deep voice.
+  let ttsProvider: TtsProvider = 'gemini';
+  let voiceId = 'Charon';
+  if (language === 'mongolian') {
+    ttsProvider = 'chimege';
+    voiceId = 'MALE1v2';
+  } else if (genre === 'scary' || genre === 'trueCrime' || genre === 'conspiracy') {
+    ttsProvider = 'elevenlabs';
+    voiceId = 'L55dxfJcuGgA6v2SWaAQ'; // Whispery Dread
+  } else if (genre === 'stoic' || genre === 'darkHistory' || genre === 'biography') {
+    ttsProvider = 'elevenlabs';
+    voiceId = 'dtSEyYGNJqjrtBArPCVZ'; // Epic & Gravitas
+  }
+
+  return { genre, imageStyle, language, ttsProvider, voiceId, bgmPath };
+}
 
 const SCRIPT_PROVIDERS: { id: ScriptProvider; label: string; desc: string }[] = [
   { id: 'anthropic', label: '🤖 Claude',  desc: 'Best quality' },
@@ -188,6 +239,21 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
   const [previewPlaying, setPreviewPlaying] = useState<string | null>(null);
   const [showAdvanced,   setShowAdvanced]   = useState(false);
 
+  /** Quick-Generate mode: topic → auto-pick everything → generate immediately. */
+  const [quickMode, setQuickMode] = useState(false);
+
+  /** Input mode toggle on step 0: type a topic, or upload a PDF. */
+  const [inputMode, setInputMode] = useState<'topic' | 'pdf'>('topic');
+  const [pdfFile, setPdfFile]           = useState<File | null>(null);
+  const [pdfLoading, setPdfLoading]     = useState(false);
+  const [pdfError, setPdfError]         = useState<string | null>(null);
+  const [pdfSummary, setPdfSummary]     = useState<{
+    topic: string; title: string; suggestedGenre: string;
+    suggestedLanguage: 'mongolian' | 'english';
+    pages: number; fileName: string;
+  } | null>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
   const playPreview = useCallback((bgmId: string) => {
     if (!bgmId) return;
     // Stop currently-playing preview if any
@@ -244,11 +310,123 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
   const handleTopicSubmit = (topic: string) => {
     if (!topic.trim()) return;
     const t = topic.trim();
-    setForm(f => ({ ...f, topic: t }));
     setDraft('');
     addUserMsg(t);
+
+    // ── Quick-Generate path: auto-pick every setting and submit immediately
+    if (quickMode) {
+      const auto = autoDetectFromTopic(t);
+      const merged: FormState = {
+        ...form,
+        topic: t,
+        genre:       auto.genre,
+        imageStyle:  auto.imageStyle,
+        language:    auto.language,
+        ttsProvider: auto.ttsProvider,
+        voiceId:     auto.voiceId,
+        bgmPath:     auto.bgmPath || form.bgmPath,
+      };
+      setForm(merged);
+
+      // Friendly chat narration so the user can see what was chosen.
+      const genreLabel = GENRES.find(g => g.id === auto.genre)?.label ?? auto.genre;
+      const styleLabel = IMAGE_STYLES.find(s => s.id === auto.imageStyle)?.label ?? auto.imageStyle;
+      aiReply(`⚡ Quick Mode → Genre: ${genreLabel} · Style: ${styleLabel} · Voice: ${auto.ttsProvider}. Generating now…`, 400);
+
+      // Fire after the typing indicator clears so the message appears first.
+      setStep(4);
+      setTimeout(() => {
+        const preset = SUBTITLE_PRESETS.find(p => p.id === merged.subtitlePreset);
+        onSubmit({
+          topic:            merged.topic,
+          genre:            merged.genre,
+          language:         merged.language,
+          imageStyle:       merged.imageStyle,
+          duration:         merged.duration,
+          transitionStyle:  'mixed',
+          ttsProvider:      merged.ttsProvider,
+          voiceId:          merged.voiceId,
+          scriptProvider:   merged.scriptProvider,
+          subtitleStyle:    preset?.style ?? SUBTITLE_CLASSIC,
+          disableSubtitles: preset?.style === null,
+          bgmPath:          merged.bgmPath || undefined,
+          bgmVolume:        merged.bgmVolume,
+          globalTransition: merged.globalTransition,
+        });
+        previewAudioRef.current?.pause();
+        previewAudioRef.current = null;
+        setPreviewPlaying(null);
+      }, 600);
+      return;
+    }
+
+    // ── Default step-by-step path
+    setForm(f => ({ ...f, topic: t }));
     setStep(1);
     aiReply('🔥 Love it! Pick a genre to set the mood:');
+  };
+
+  // ── PDF Upload handlers ────────────────────────────────────────────────────
+  const handlePdfPick = (file: File | null) => {
+    if (!file) return;
+    setPdfError(null);
+    setPdfSummary(null);
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setPdfError('Зөвхөн PDF файл оруулна уу.');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      setPdfError('Файл хэт том байна (max 15 MB).');
+      return;
+    }
+    setPdfFile(file);
+  };
+
+  const handlePdfSummarise = async () => {
+    if (!pdfFile) return;
+    setPdfLoading(true);
+    setPdfError(null);
+    try {
+      const result = await summarisePdf(pdfFile, token ?? undefined);
+      setPdfSummary({
+        topic:             result.topic,
+        title:             result.title,
+        suggestedGenre:    result.suggestedGenre,
+        suggestedLanguage: result.suggestedLanguage,
+        pages:             result.pages,
+        fileName:          result.fileName,
+      });
+      addUserMsg(`📄 ${result.fileName} (${result.pages} pages)`);
+      aiReply(`✨ Уншиж дууслаа! Сэдэв: "${result.title}". Доороос баталгаажуулж generate дарна уу.`, 500);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'PDF боловсруулахад алдаа гарлаа.';
+      setPdfError(msg);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleUsePdfSummary = () => {
+    if (!pdfSummary) return;
+    // Treat the AI-generated topic just like a normal typed topic — flow into
+    // the same Quick-Generate or step-by-step path the user has chosen.
+    const topic = pdfSummary.topic.trim();
+    // Inherit suggested genre + language from the LLM so the downstream flow
+    // doesn't fight the user's intent. They can still override later.
+    const auto = autoDetectFromTopic(topic);
+    const finalGenre    = pdfSummary.suggestedGenre || auto.genre;
+    const finalLang     = pdfSummary.suggestedLanguage || auto.language;
+    setForm(f => ({
+      ...f,
+      topic,
+      genre:    finalGenre,
+      language: finalLang,
+    }));
+    // Reset PDF UI so a future "back to step 0" doesn't show stale state.
+    setPdfFile(null);
+    setPdfSummary(null);
+    setInputMode('topic');
+    handleTopicSubmit(topic);
   };
 
   const handleGenreSelect = (genreId: string, genreLabel: string) => {
@@ -672,39 +850,198 @@ export function ChatInterface({ onSubmit, isLoading, onReset, isDone }: Props) {
       {!isLoading && (
         <div className={styles.inputArea}>
           {step === 0 && (
-            <div className={styles.templates}>
-              {TEMPLATES.map(t => (
-                <button key={t.label} className={styles.templatePill}
-                  onClick={() => handleTopicSubmit(t.topic)}>
-                  {t.label}
+            <>
+              {/* Input mode tab switcher: Topic vs PDF upload */}
+              <div className={styles.modeTabs}>
+                <button
+                  type="button"
+                  className={`${styles.modeTab} ${inputMode === 'topic' ? styles.modeTabActive : ''}`}
+                  onClick={() => setInputMode('topic')}
+                >
+                  💬 Topic
                 </button>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  className={`${styles.modeTab} ${inputMode === 'pdf' ? styles.modeTabActive : ''}`}
+                  onClick={() => setInputMode('pdf')}
+                >
+                  📄 PDF Upload
+                </button>
+              </div>
+
+              {/* PDF upload zone */}
+              {inputMode === 'pdf' && (
+                <div className={styles.pdfPanel}>
+                  {!pdfSummary && (
+                    <>
+                      <div
+                        className={`${styles.pdfDropzone} ${pdfFile ? styles.pdfDropzoneHasFile : ''}`}
+                        onClick={() => pdfInputRef.current?.click()}
+                        onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                        onDrop={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const f = e.dataTransfer.files?.[0];
+                          if (f) handlePdfPick(f);
+                        }}
+                      >
+                        <input
+                          ref={pdfInputRef}
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          style={{ display: 'none' }}
+                          onChange={e => handlePdfPick(e.target.files?.[0] ?? null)}
+                        />
+                        {!pdfFile ? (
+                          <>
+                            <div className={styles.pdfDropIcon}>📄</div>
+                            <div className={styles.pdfDropTitle}>PDF файл татаж буулгах</div>
+                            <div className={styles.pdfDropSub}>
+                              эсвэл дарж сонгох (max 15 MB)
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className={styles.pdfDropIcon}>✅</div>
+                            <div className={styles.pdfDropTitle}>{pdfFile.name}</div>
+                            <div className={styles.pdfDropSub}>
+                              {(pdfFile.size / 1024).toFixed(1)} KB · click to change
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {pdfError && (
+                        <div className={styles.pdfError}>{pdfError}</div>
+                      )}
+
+                      <button
+                        type="button"
+                        className={styles.pdfAnalyseBtn}
+                        disabled={!pdfFile || pdfLoading}
+                        onClick={handlePdfSummarise}
+                      >
+                        {pdfLoading ? (
+                          <>
+                            <span className={styles.pdfSpinner} />
+                            Уншиж байна… (~10s)
+                          </>
+                        ) : (
+                          <>✨ AI-аар сэдэв гаргуулах</>
+                        )}
+                      </button>
+                    </>
+                  )}
+
+                  {pdfSummary && (
+                    <div className={styles.pdfSummary}>
+                      <div className={styles.pdfSummaryHead}>
+                        <span className={styles.pdfSummaryBadge}>📄 {pdfSummary.pages} pages</span>
+                        <button
+                          type="button"
+                          className={styles.pdfResetBtn}
+                          onClick={() => { setPdfSummary(null); setPdfFile(null); }}
+                        >
+                          Reset
+                        </button>
+                      </div>
+                      <div className={styles.pdfSummaryTitle}>{pdfSummary.title}</div>
+                      <div className={styles.pdfSummaryTopic}>{pdfSummary.topic}</div>
+                      <div className={styles.pdfSummaryMeta}>
+                        <span className={styles.pdfSummaryMetaItem}>
+                          🎭 {pdfSummary.suggestedGenre}
+                        </span>
+                        <span className={styles.pdfSummaryMetaItem}>
+                          🌐 {pdfSummary.suggestedLanguage === 'mongolian' ? '🇲🇳 Mongolian' : '🇬🇧 English'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.pdfUseBtn}
+                        onClick={handleUsePdfSummary}
+                      >
+                        ✨ Энэ сэдвээр үргэлжлүүлэх →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quick-Generate banner + toggle: enabled means "topic only → instant video" */}
+              {inputMode === 'topic' && (
+              <>
+              <div className={`${styles.quickBanner} ${quickMode ? styles.quickBannerOn : ''}`}>
+                <div className={styles.quickBannerText}>
+                  <span className={styles.quickBannerIcon}>⚡</span>
+                  <div>
+                    <div className={styles.quickBannerTitle}>
+                      {quickMode ? 'Quick Generate ON' : 'Quick Generate'}
+                    </div>
+                    <div className={styles.quickBannerSub}>
+                      {quickMode
+                        ? 'Topic-оо бичээд Enter дарна уу. Бусдыг нь автоматаар сонгож шууд үүсгэнэ.'
+                        : 'Topic-оор шууд видео үүсгэх — бусад тохиргоог AI өөрөө сонгоно.'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={`${styles.quickSwitch} ${quickMode ? styles.quickSwitchOn : ''}`}
+                  onClick={() => setQuickMode(m => !m)}
+                  role="switch"
+                  aria-checked={quickMode}
+                  title="Toggle Quick Generate mode"
+                >
+                  <span className={styles.quickSwitchKnob} />
+                </button>
+              </div>
+
+              <div className={styles.templates}>
+                {TEMPLATES.map(t => (
+                  <button key={t.label} className={styles.templatePill}
+                    onClick={() => handleTopicSubmit(t.topic)}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              </>
+              )}
+            </>
           )}
 
-          <div className={styles.inputRow}>
-            <input
-              ref={inputRef}
-              className={`${styles.input} ${inputDisabled ? styles.inputDisabled : ''}`}
-              placeholder={inputPlaceholder}
-              value={step === 0 ? draft : ''}
-              onChange={e => { if (step === 0) setDraft(e.target.value); }}
-              onKeyDown={e => { if (e.key === 'Enter' && draft.trim() && step === 0) handleTopicSubmit(draft); }}
-              disabled={inputDisabled}
-              readOnly={inputDisabled}
-              autoFocus={step === 0}
-            />
-            <button
-              className={styles.sendBtn}
-              disabled={!draft.trim() || step !== 0}
-              onClick={() => handleTopicSubmit(draft)}
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-            </button>
-          </div>
+          {/* Hide the text input in PDF mode — PDF panel has its own buttons. */}
+          {(step !== 0 || inputMode === 'topic') && (
+            <div className={styles.inputRow}>
+              <input
+                ref={inputRef}
+                className={`${styles.input} ${inputDisabled ? styles.inputDisabled : ''}`}
+                placeholder={
+                  step === 0 && quickMode
+                    ? '⚡ Topic бичээд Enter — шууд үүсгэнэ…'
+                    : inputPlaceholder
+                }
+                value={step === 0 ? draft : ''}
+                onChange={e => { if (step === 0) setDraft(e.target.value); }}
+                onKeyDown={e => { if (e.key === 'Enter' && draft.trim() && step === 0) handleTopicSubmit(draft); }}
+                disabled={inputDisabled}
+                readOnly={inputDisabled}
+                autoFocus={step === 0}
+              />
+              <button
+                className={`${styles.sendBtn} ${quickMode && step === 0 ? styles.sendBtnQuick : ''}`}
+                disabled={!draft.trim() || step !== 0}
+                onClick={() => handleTopicSubmit(draft)}
+                title={quickMode ? 'Generate now (auto)' : 'Submit topic'}
+              >
+                {quickMode && step === 0
+                  ? <span style={{ fontSize: 13, fontWeight: 800 }}>⚡</span>
+                  : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"/>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
